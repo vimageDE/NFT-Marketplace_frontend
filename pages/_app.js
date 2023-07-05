@@ -1,15 +1,15 @@
 import { MoralisProvider } from 'react-moralis';
 import { NotificationProvider } from 'web3uikit';
 import '../styles/globals.css';
-import { ExampleForContract } from '../components/Contracts';
+import { Contract_NFT } from '../components/Contract_NFT';
 
 function MyApp({ Component, pageProps }) {
   return (
     <MoralisProvider initializeOnMount={false}>
       <NotificationProvider>
-        <ExampleForContract>
+        <Contract_NFT>
           <Component {...pageProps} />
-        </ExampleForContract>
+        </Contract_NFT>
       </NotificationProvider>
     </MoralisProvider>
   );

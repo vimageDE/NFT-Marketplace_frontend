@@ -17,6 +17,9 @@ module.exports = {
       colors: {
         gold: '#e9c169',
       },
+      fontSize: {
+        artistName: '14vw',
+      },
     },
   },
   plugins: [],
