@@ -7,15 +7,23 @@
 
 @layer base{
     html {
-        @apply text-white;
+        @apply text-black;
         font-family: 'Bebas Neue', sans-serif;
         font-family: 'Inter', sans-serif;    }
     h1 {
+        @apply text-white;
         font-family: 'Bebas Neue', sans-serif;
         font-family: 'Inter', sans-serif;
     }
     h2 {
+        @apply text-white;
         font-family: 'Bebas Neue', sans-serif;
         font-family: 'Bebas Neue', sans-serif;
+    }
+    button{
+        @apply bg-slate-700 hover:bg-gold py-2 px-4 rounded-md font-black text-white;
+    }
+    input{
+        @apply rounded-xl h-8 pl-8;
     }
 }

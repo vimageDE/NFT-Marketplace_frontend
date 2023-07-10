@@ -1,21 +1,26 @@
 import Head from 'next/head';
 import Header from '../components/Component_Header';
 import UserProfile from '../components/Component_UserProfile';
+import CreateProfile from '../components/Component_CreateProfile';
 import { useMoralis } from 'react-moralis';
+import { LoadingOverlay } from '../components/Component_Loading';
+import { Globals } from '../components/GlobalVariables';
+import { useContext } from 'react';
 
 const supportedChains = ['31337', '11155111'];
 const bgImage = '/background-image.jpg';
 
 export default function Home() {
+  const { isLoading, isLoadingText } = useContext(Globals);
   const { isWeb3Enabled, chainId } = useMoralis();
 
   return (
     <div
-      className="bg-cover min-h-screen bg-black bg-opacity-10 bg-fixed"
+      className="bg-cover min-h-screen bg-gray-200 bg-opacity-100 bg-fixed"
       // style={{ backgroundImage: `url(${bgImage})` }}
     >
       <Head>
-        <title>NFT Market</title>
+        <title>NFT Portfolio</title>
         <meta name="description" content="template by Mark Wierzimok" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
@@ -24,7 +29,7 @@ export default function Home() {
         <div>
           {supportedChains.includes(parseInt(chainId).toString()) ? (
             <div className="">
-              <UserProfile className="" />
+              <CreateProfile className="" />
             </div>
           ) : (
             <div>{`Please switch to a supported chainId. The supported Chain Ids are: ${supportedChains}`}</div>
@@ -33,6 +38,7 @@ export default function Home() {
       ) : (
         <div>Please connect to a Wallet</div>
       )}
+      <LoadingOverlay />
     </div>
   );
 }
