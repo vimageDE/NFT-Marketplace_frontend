@@ -13,12 +13,11 @@ const client = new NFTStorage({
 
 export default function CreateProfile() {
   const { isWeb3Enabled } = useMoralis();
-  const { signerAddress } = useContext(NftContract);
-  const { isLoading, setIsLoading, setIsLoadingText } = useContext(Globals);
+  const { signerAddress, createArtwork, setSeries, hasProfile, fetchMetadata, getImageUrl } = useContext(NftContract);
+  const { isLoading, setIsLoading, setIsLoadingText, createProfilePopup, setCreateProfilePoup } = useContext(Globals);
   // UI State Variables
   const [userNotification, setUserNotification] = useState('');
   const [profileName, setProfileName] = useState('');
-  const [createProfilePopup, setCreateProfilePoup] = useState(false);
   // NFT Data
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -131,15 +130,22 @@ export default function CreateProfile() {
       const url = await uploadToIPFS(selectedFile);
       setNftUrl(url);
       const metadata = await fetchMetadata(url);
-      const imageUrl = metadata.image.replace('ipfs://', 'https://ipfs.io/ipfs/');
+      const imageUrl = getImageUrl(metadata);
       setNftImageUrl(imageUrl);
 
       setIsLoadingText('Waiting for Transaction');
 
+      if (!hasProfile && profileName) {
+        setIsLoadingText('Creating Portfolio Transaction');
+        await setSeries(profileName);
+      }
+      setIsLoadingText('Creating NFT Transaction');
+      await createArtwork(url);
+
       setIsLoading(false);
     } catch (e) {
       setIsLoading('Error creating NFT');
-      setTimeout(setIsLoading(false), 2000);
+      setTimeout(() => setIsLoading(false), 2000);
     }
   };
 
@@ -150,16 +156,6 @@ export default function CreateProfile() {
       image: new File([file], file.name, { type: file.type }),
     });
     return metadata.url;
-  };
-
-  const fetchMetadata = async (url) => {
-    // const response = await fetch(`https://ipfs.io/ipfs/${cid}`);
-    const ipfsUrl = url.replace('ipfs://', 'https://ipfs.io/ipfs/');
-    const response = await fetch(ipfsUrl);
-    const text = await response.text();
-    console.log(`this is the url text: ${text}`);
-    const metadata = JSON.parse(text);
-    return metadata;
   };
 
   return (
@@ -204,6 +200,7 @@ export default function CreateProfile() {
                 <input
                   placeholder="enter your wallet address..."
                   value={signerAddress.slice(0, 6) + '...' + signerAddress.slice(-6)}
+                  readOnly={true}
                 ></input>
               </div>
             </div>

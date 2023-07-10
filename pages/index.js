@@ -5,6 +5,7 @@ import CreateProfile from '../components/Component_CreateProfile';
 import { useMoralis } from 'react-moralis';
 import { LoadingOverlay } from '../components/Component_Loading';
 import { Globals } from '../components/GlobalVariables';
+import { NftContract } from '../components/Contract_NFT';
 import { useContext } from 'react';
 
 const supportedChains = ['31337', '11155111'];
@@ -12,6 +13,7 @@ const bgImage = '/background-image.jpg';
 
 export default function Home() {
   const { isLoading, isLoadingText } = useContext(Globals);
+  const { hasProfile } = useContext(NftContract);
   const { isWeb3Enabled, chainId } = useMoralis();
 
   return (
@@ -28,9 +30,7 @@ export default function Home() {
       {isWeb3Enabled ? (
         <div>
           {supportedChains.includes(parseInt(chainId).toString()) ? (
-            <div className="">
-              <CreateProfile className="" />
-            </div>
+            <div className="">{hasProfile ? <UserProfile /> : <CreateProfile />}</div>
           ) : (
             <div>{`Please switch to a supported chainId. The supported Chain Ids are: ${supportedChains}`}</div>
           )}
