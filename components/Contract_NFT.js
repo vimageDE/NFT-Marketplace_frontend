@@ -18,6 +18,8 @@ export const Contract_NFT = ({ children }) => {
   const [customAddress, setCustomAddress] = useState('');
   // contract state variables
   const [hasProfile, setHasProfile] = useState(false);
+  const [userHasProfile, setUserHasProfile] = useState(false);
+  const [ownProfile, setOwnProfile] = useState(false);
   const [seriesName, setSeriesName] = useState('');
   const [metadataCollection, setMetadataCollection] = useState([]);
 
@@ -33,7 +35,7 @@ export const Contract_NFT = ({ children }) => {
     if (isWeb3Enabled && contract) {
       updateContractValues();
     }
-  }, [contract]);
+  }, [contract, customAddress]);
 
   // Set Contract
   async function updateContract() {
@@ -52,11 +54,24 @@ export const Contract_NFT = ({ children }) => {
   async function updateContractValues() {
     if (!contract || !signerAddress) return;
 
+    const isOwnProfile = !customAddress || customAddress == signerAddress;
+    console.log('Is own profile? ', isOwnProfile);
+    setOwnProfile(isOwnProfile);
     const address = customAddress ? customAddress : signerAddress;
 
+    if (!ethers.utils.isAddress(address)) {
+      setHasProfile(false);
+      return;
+    }
+
     const getArtworks_Callback = await contract.getArtworksOfOwner(address);
+    if (!userHasProfile) {
+      const getOwnSeriesName_Callback = await contract.getSeriesName(signerAddress);
+      setUserHasProfile(getOwnSeriesName_Callback.length > 0);
+      // console.log('test', getOwnSeriesName_Callback.toString());
+    }
     const getSeriesName_Callback = await contract.getSeriesName(address);
-    const mc = metadataCollection;
+    const mc = [];
 
     console.log(`Series Name: ${getSeriesName_Callback} - Artworks: ${getArtworks_Callback.length.toString()}`);
 
@@ -68,6 +83,7 @@ export const Contract_NFT = ({ children }) => {
       console.log(`token ID: ${tokenId} - uri: ${uri}`);
     }
 
+    console.log(`The searched user ${address} - has a profile? ${getArtworks_Callback.length > 0}`);
     setHasProfile(getArtworks_Callback.length > 0);
     setSeriesName(getSeriesName_Callback.toString());
     setMetadataCollection(mc);
@@ -144,8 +160,11 @@ export const Contract_NFT = ({ children }) => {
         setContract,
         // State Variables
         hasProfile,
+        userHasProfile,
+        ownProfile,
         seriesName,
         metadataCollection,
+        customAddress,
         setCustomAddress,
         // Functions
         updateContractValues,

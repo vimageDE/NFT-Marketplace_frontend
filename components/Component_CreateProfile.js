@@ -14,10 +14,10 @@ const client = new NFTStorage({
 export default function CreateProfile() {
   const { isWeb3Enabled } = useMoralis();
   const { signerAddress, createArtwork, setSeries, hasProfile, fetchMetadata, getImageUrl } = useContext(NftContract);
-  const { isLoading, setIsLoading, setIsLoadingText, createProfilePopup, setCreateProfilePoup } = useContext(Globals);
+  const { isLoading, setIsLoading, setIsLoadingText, setCreateNftPopup, profileName, setProfileName } =
+    useContext(Globals);
   // UI State Variables
   const [userNotification, setUserNotification] = useState('');
-  const [profileName, setProfileName] = useState('');
   // NFT Data
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -57,7 +57,7 @@ export default function CreateProfile() {
     setSelectedName('');
     setSelectedDescr('');
     // Open create profile popup
-    setCreateProfilePoup(true);
+    setCreateNftPopup(true);
   };
 
   const handleImagePreview = (event) => {
@@ -217,102 +217,6 @@ export default function CreateProfile() {
       {
         // Create Profile Popup
       }
-      <Modal
-        isOpen={createProfilePopup}
-        onRequestClose={() => {
-          setCreateProfilePoup(false);
-        }}
-        contentLabel="Create Profile"
-        className="m-auto bg-slate-700 w-1/2 rounded-xl shadow max-h-[800px] max-w-[500px]"
-        overlayClassName="fixed inset-0 bg-black bg-opacity-75 flex"
-      >
-        <div className="text-white text-center">
-          <div className="bg-gold rounded h-28">
-            <h2 className="text-6xl pt-8">Create an NFT</h2>
-          </div>
-          <div className="">
-            <div className="my-16 flex flex-col items-center">
-              <label htmlFor="file-upload">
-                <img
-                  src={selectedImage ? selectedImage : '/createNFT_PLACEHOLDER.jpg'}
-                  alt="NFT"
-                  className="max-h-48 rounded border-white border-2 cursor-pointer"
-                ></img>
-              </label>
-              {!selectedImage ? (
-                <>
-                  <label
-                    htmlFor="file-upload"
-                    className="bg-white hover:bg-gold text-slate-700 cursor-pointer uppercase mt-2 font-black py-2 px-4 rounded-md"
-                  >
-                    Upload NFT-image
-                  </label>
-
-                  <div>supported files: .png .jpg</div>
-                </>
-              ) : (
-                <>
-                  <div className="pt-4">
-                    <div>Name of the NFT:</div>{' '}
-                    <input
-                      id="inputSelectedName"
-                      className="pl-0 text-center text-black"
-                      placeholder="Enter the name.."
-                      onChange={(e) => {
-                        handleImageName(e);
-                      }}
-                    ></input>
-                  </div>
-                  <div className="min-h-[60px]">
-                    {selectedName ? (
-                      <>
-                        <div>Description of the NFT:</div>
-                        <input
-                          id="inputSelectedDescr"
-                          className="pl-0 text-center text-black w-96"
-                          placeholder="Enter the description.."
-                          onChange={(e) => {
-                            handleImageDescr(e);
-                          }}
-                        ></input>
-                        <div className="min-h-[41px] mt-4">
-                          {selectedDescr ? (
-                            <>
-                              <button className="bg-gold hover:bg-gray-300 uppercase" onClick={handleImageUpload}>
-                                Create NFT
-                              </button>
-                              <div>{nftUrl}</div>
-                            </>
-                          ) : (
-                            <></>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <></>
-                    )}
-                  </div>
-                </>
-              )}
-              <input
-                id="file-upload"
-                className="hidden"
-                type="file"
-                accept="image/jpeg, image/png"
-                onChange={async (event) => {
-                  handleImagePreview(event);
-                }}
-              />
-            </div>
-            <div className="border-white rounded bg-slate-800 py-4 flex flex-col items-center">
-              <div className="font-black uppercase w-3/4">The NFT will be tied to your profile</div>
-              <div className="px-6 text-sm mt-2">
-                Uploaded images will be put on an IPFS network, where they will be perpetual and can not be deleted!
-              </div>
-            </div>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }
