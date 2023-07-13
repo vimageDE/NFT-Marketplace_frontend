@@ -11,8 +11,17 @@ import { Globals } from './GlobalVariables';
 
 export default function UserProfile() {
   // Global Variables
-  const { signerAddress, seriesName, metadataCollection, getImageUrl, ownProfile, hasProfile, customAddress } =
-    useContext(NftContract);
+  const {
+    signerAddress,
+    seriesName,
+    seriesTitle,
+    metadataCollection,
+    metadataCollectionOwned,
+    getImageUrl,
+    ownProfile,
+    hasProfile,
+    customAddress,
+  } = useContext(NftContract);
   const { setCreateNftPopup } = useContext(Globals);
   // State Variables
   const [profileHeader, setProfileHeader] = useState('/profile-hero_PLACEHOLDER.png');
@@ -20,9 +29,9 @@ export default function UserProfile() {
 
   useEffect(() => {
     if (metadataCollection.length > 0) {
-      setProfileHeader(getImageUrl(metadataCollection[0]));
+      setProfileHeader(getImageUrl(metadataCollection[seriesTitle]));
     }
-  }, [metadataCollection]);
+  }, [metadataCollection, seriesTitle]);
 
   return (
     <div>
@@ -79,8 +88,8 @@ export default function UserProfile() {
               <div className="text-center text-slate-700">{`NFT portfolio created by:`}</div>
               <div className="text-center font-black text-slate-700">{signerAddress}</div>
               <div className="flex items-center justify-center space-x-8 my-8">
-                {metadataCollection.map((data) => (
-                  <NFT key={data.id} metadata={data} />
+                {metadataCollection.map((data, index) => (
+                  <NFT key={data.id} index={index} metadata={data} />
                 ))}
               </div>
             </div>
@@ -95,8 +104,8 @@ export default function UserProfile() {
               <div className="text-center text-slate-700">{`NFT currently owned by:`}</div>
               <div className="text-center font-black text-slate-700">{signerAddress}</div>
               <div className="flex items-center justify-center space-x-8 my-8">
-                {metadataCollection.map((data) => (
-                  <NFT key={data.id} metadata={data} ownedSection={true} />
+                {metadataCollectionOwned.map((data, index) => (
+                  <NFT key={data.id} index={index} metadata={data} ownedSection={true} />
                 ))}
               </div>
             </div>
