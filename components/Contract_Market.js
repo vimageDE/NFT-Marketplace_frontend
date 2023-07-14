@@ -12,6 +12,8 @@ export const MarketContract = createContext();
 export const Contract_Market = ({ children }) => {
   const { chainId, contract, contract_Market, signer, signerAddress } = useContext(NftContract);
 
+  // State Variables
+
   // Functions
   const getNonce = async () => {
     const contract_Market_connected = contract_Market.connect(signer);
@@ -23,12 +25,17 @@ export const Contract_Market = ({ children }) => {
 
   // Front End Functions
 
-  const signMessage = async function (tokenId, price, typeOf) {
+  const signMessage = async function (tokenId, priceAsText, typeOf) {
     // Get Nonce of user
     const nonce = await getNonce();
+    // Convert price from text to wei
+    const priceInWei = ethers.utils.parseEther(priceAsText);
+    // big Number tokenId
+    // const tokenId_BN = ethers.BigNumber.from(tokenId);
+
     // Define the EIP-712 domain - All properties on a domain are optional
     const domain = {
-      name: 'NFt Portfolio',
+      name: 'NFT Portfolio',
       version: '1',
       chainId: chainId,
       verifyingContract: contract_Market.address,
@@ -36,29 +43,45 @@ export const Contract_Market = ({ children }) => {
 
     const types = {
       Message: [
-        { name: 'tokenId', type: 'string' },
-        { name: 'address', type: 'string' },
-        { name: 'price', type: 'string' },
-        { name: 'type', type: 'string' },
-        { name: 'nonce', type: 'string' },
+        { name: 'tokenId', type: 'uint256' },
+        { name: 'nonce', type: 'uint256' },
+        // { name: 'price', type: 'uint256' },
+        // { name: 'sigOwner', type: 'address' },
+        { name: 'typeOf', type: 'string' },
       ],
     };
     // Define the message
     const value = {
-      tokenId: tokenId.toString(),
-      address: signerAddress.toString(),
-      price: price.toString(),
-      type: typeOf.toString(),
-      nonce: nonce.toString(),
+      tokenId: tokenId,
+      nonce: nonce,
+      // price: priceInWei,
+      // sigOwner: signerAddress,
+      typeOf: typeOf,
     };
 
     console.log('Sign Message');
+    console.log(
+      `Token ID: ${tokenId.toString()} - sigOwner: ${signerAddress.toString()} - priceInWei: ${priceInWei.toString()} - typeOf ${typeOf.toString()} - nonce ${nonce.toString()}`
+    );
 
     const signature = await signer._signTypedData(domain, types, value);
 
     console.log('Message signed!');
 
+    await verifyMessage(tokenId, signerAddress, priceAsText, typeOf, nonce, signature);
+
     return signature;
+  };
+
+  const verifyMessage = async function (tokenId, sigOwner, priceAsText, typeOf, nonce, signature) {
+    const priceInWei = ethers.utils.parseEther(priceAsText);
+
+    console.log('Verify Message:');
+    console.log(
+      `Token ID: ${tokenId.toString()} - sigOwner: ${sigOwner.toString()} - priceInWei: ${priceInWei.toString()} - typeOf ${typeOf.toString()} - nonce ${nonce.toString()}`
+    );
+    const result = await contract_Market.getSigner(tokenId, sigOwner, priceInWei, typeOf, nonce, signature);
+    console.log(`Verify finished! ${sigOwner} should be ${result}, which is: ${sigOwner == result}`);
   };
 
   // Firebase Functions
@@ -83,12 +106,12 @@ export const Contract_Market = ({ children }) => {
   };
 
   const setSale = async function (metadata, price) {
-    const signature = await signMessage(metadata.tokenId.toString(), price.toString(), 'sale');
+    const signature = await signMessage(metadata.tokenId, price.toString(), 'sale');
 
     const sale = {
       tokenId: metadata.tokenId.toString(),
       address: signerAddress.toString(),
-      price: price,
+      price: price.toString(),
       signature: signature,
     };
     console.log(`Setting NFT price: ${sale.price}`);

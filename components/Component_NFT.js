@@ -42,6 +42,9 @@ export const NFT = ({ index, metadata, ownedSection }) => {
   if (metadata.owned) {
     lightboxBelow.push(
       <div className="flex items-center space-x-4">
+        <button onClick={() => setSale(metadata, inputSellPrice)} className="bg-white text-slate-700">
+          Verify
+        </button>
         <input
           value={inputSellPrice}
           placeholder="Set Price in WETH"
