@@ -20,7 +20,17 @@ export const Contract_Market = ({ children }) => {
     const nonce = await contract_Market_connected.getNonce();
     return nonce;
   };
-  const purchaseNft = async (saleId) => {};
+  const purchaseNft = async (tokenId, tokenOwner) => {
+    const saleId = tokenId + '-' + tokenOwner;
+    const docRef = db.collection('sale').doc(saleId);
+    docRef.get().then((doc) => {
+      if (doc.exists) {
+        console.log('Document data:', doc.data());
+      } else {
+        console.log('No such document!');
+      }
+    });
+  };
   const sellNft = async (offerId) => {};
 
   // Front End Functions
@@ -45,24 +55,21 @@ export const Contract_Market = ({ children }) => {
       Message: [
         { name: 'tokenId', type: 'uint256' },
         { name: 'nonce', type: 'uint256' },
-        // { name: 'price', type: 'uint256' },
-        // { name: 'sigOwner', type: 'address' },
+        { name: 'price', type: 'uint256' },
         { name: 'typeOf', type: 'string' },
+        { name: 'user', type: 'address' },
       ],
     };
     // Define the message
     const value = {
-      tokenId: tokenId,
-      nonce: nonce,
-      // price: priceInWei,
-      // sigOwner: signerAddress,
+      tokenId: tokenId, // ethers.BigNumber.from(15),
+      nonce: nonce, // ethers.BigNumber.from(30),
+      price: priceInWei, // ethers.BigNumber.from(60),
       typeOf: typeOf,
+      user: signerAddress,
     };
 
     console.log('Sign Message');
-    console.log(
-      `Token ID: ${tokenId.toString()} - sigOwner: ${signerAddress.toString()} - priceInWei: ${priceInWei.toString()} - typeOf ${typeOf.toString()} - nonce ${nonce.toString()}`
-    );
 
     const signature = await signer._signTypedData(domain, types, value);
 
@@ -77,10 +84,8 @@ export const Contract_Market = ({ children }) => {
     const priceInWei = ethers.utils.parseEther(priceAsText);
 
     console.log('Verify Message:');
-    console.log(
-      `Token ID: ${tokenId.toString()} - sigOwner: ${sigOwner.toString()} - priceInWei: ${priceInWei.toString()} - typeOf ${typeOf.toString()} - nonce ${nonce.toString()}`
-    );
-    const result = await contract_Market.getSigner(tokenId, sigOwner, priceInWei, typeOf, nonce, signature);
+
+    const result = await contract_Market.getSigner(tokenId, nonce, priceInWei, typeOf, signature);
     console.log(`Verify finished! ${sigOwner} should be ${result}, which is: ${sigOwner == result}`);
   };
 
@@ -108,6 +113,7 @@ export const Contract_Market = ({ children }) => {
   const setSale = async function (metadata, price) {
     const signature = await signMessage(metadata.tokenId, price.toString(), 'sale');
 
+    return;
     const sale = {
       tokenId: metadata.tokenId.toString(),
       address: signerAddress.toString(),
