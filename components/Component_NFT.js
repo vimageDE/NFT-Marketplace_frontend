@@ -1,26 +1,38 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { NftContract } from './Contract_NFT';
 import { MarketContract } from './Contract_Market';
+import { FirebaseBackend } from './Backend_Firebase';
 import Modal from 'react-modal';
 import { db } from '../firebase';
 import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
 
 export const NFT = ({ index, metadata, ownedSection }) => {
-  const { chainId, contract, signer, signerAddress, getImageUrl, ownProfile, setTitle, getNonce } =
+  const { chainId, contract, signer, signerAddress, getImageUrl, ownProfile, setTitle, customAddress, getNonce } =
     useContext(NftContract);
   const { setOffer, setSale } = useContext(MarketContract);
+  const { getSaleData, getOfferData } = useContext(FirebaseBackend);
 
   const [lightbox, setLightbox] = useState(false);
   const [inputSellPrice, setInputSellPrice] = useState('');
+  // let owner = ownProfile && ownedSection ? signerAddress : customAddress;
 
   // HTML variables
+  let infoBelow = (
+    <>
+      <div className="text-center">Price: {metadata.sale.price}</div>
+      <div className="text-center">Max offer: {metadata.highestOffer.price}</div>
+    </>
+  );
+
   let buttonsBelow = <></>;
   let lightboxBelow = [];
   if (ownedSection && ownProfile) {
     buttonsBelow = (
-      <button className="" onClick={() => setLightbox(true)}>
-        Sell
-      </button>
+      <>
+        <button className="" onClick={() => setLightbox(true)}>
+          Sell
+        </button>
+      </>
     );
   } else if (ownProfile) {
     buttonsBelow = (
@@ -39,19 +51,42 @@ export const NFT = ({ index, metadata, ownedSection }) => {
       </button>
     );
   }
-  if (metadata.owned) {
+  if (metadata.owner == signerAddress) {
+    // User is Owner!
     lightboxBelow.push(
       <div className="flex items-center space-x-4">
-        <button onClick={() => setSale(metadata, inputSellPrice)} className="bg-white text-slate-700">
-          Verify
+        <button onClick={() => getSaleData(metadata)} className="bg-white text-slate-700">
+          Get Data
         </button>
         <input
+          type="text"
+          pattern="^\d+(\.\d{0,4})?$"
           value={inputSellPrice}
           placeholder="Set Price in WETH"
           onChange={(e) => setInputSellPrice(e.target.value.toString())}
         ></input>
         <button onClick={() => setSale(metadata, inputSellPrice)} className="bg-white text-slate-700">
           Sell
+        </button>
+      </div>
+    );
+  } else {
+    // User is NOT Owner!
+    lightboxBelow.push(
+      <div className="flex items-center space-x-4">
+        <button onClick={() => getOfferData(metadata)} className="bg-white text-slate-700">
+          Get Data
+        </button>
+        <input
+          type="text"
+          pattern="^\d+(\.\d{0,4})?$"
+          value={inputSellPrice}
+          placeholder="WETH"
+          onChange={(e) => setInputSellPrice(e.target.value.toString())}
+          className="w-32 text-center pl-0"
+        ></input>
+        <button onClick={() => setOffer(metadata, inputSellPrice)} className="bg-white text-slate-700">
+          Make Offer
         </button>
       </div>
     );
@@ -66,6 +101,7 @@ export const NFT = ({ index, metadata, ownedSection }) => {
         }}
       ></div>
       {buttonsBelow}
+      {infoBelow}
       <Modal
         isOpen={lightbox}
         onRequestClose={() => setLightbox(false)}

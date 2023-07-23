@@ -4,12 +4,17 @@ import { useMoralis, useWeb3Contract } from 'react-moralis';
 import { ethers } from 'ethers';
 import { contractAddresses, abi, contractAddresses_Market, abi_market } from '../constants';
 import { Globals } from './GlobalVariables';
+import { FirebaseBackend } from './Backend_Firebase';
+import { db } from '../firebase';
+import { collection, addDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 
 export const NftContract = createContext();
 
 export const Contract_NFT = ({ children }) => {
   // get Global Variables
   const { setIsLoading, setIsLoadingText } = useContext(Globals);
+  // get Firebase Variables
+  const { getSaleData, getOfferData } = useContext(FirebaseBackend);
   // contract interaction Variables
   const { Moralis, isWeb3Enabled, chainId: chainIdHex } = useMoralis();
   const chainId = parseInt(chainIdHex);
@@ -90,11 +95,30 @@ export const Contract_NFT = ({ children }) => {
       const uri = await contract.tokenURI(tokenId);
       let metadata = await fetchMetadata(uri);
       // Add custom Metadata
-      metadata = { ...metadata, tokenId: tokenId, created: true, owned: false };
+      metadata = {
+        ...metadata,
+        tokenId: tokenId,
+        created: true,
+        owned: false,
+        owner: '',
+        sale: { price: 0 },
+        offers: null,
+        highestOffer: { price: 0 },
+      };
 
       if (getOwnedArtworks_Callback.includes(tokenId)) {
         // Change custom Metadata
         metadata.owned = true;
+        metadata.owner = address;
+        // Get Firebase data
+        console.log('Should search for: ', tokenId, '-', address);
+        const sale = await getSaleData(metadata);
+        const offers = await getOfferData(metadata);
+        if (sale) metadata.sale = sale;
+        if (offers) {
+          metadata.offers = offers.all;
+          metadata.highestOffer = offers.highest;
+        }
         // Add to array
         mOwned.push(metadata);
         // remove the tokenID from the created Array
@@ -111,8 +135,24 @@ export const Contract_NFT = ({ children }) => {
       const tokenId = getOwnedArtworks_Callback[i];
       const uri = await contract.tokenURI(tokenId);
       let metadata = await fetchMetadata(uri);
+      // Set custom data
+      metadata = {
+        ...metadata,
+        tokenId: tokenId,
+        created: false,
+        owned: true,
+        owner: address,
+      };
+      // Get Firebase data
+      const sale = await getSaleData(metadata);
+      const offers = await getOfferData(metadata);
       // Add custom Metadata
-      metadata = { ...metadata, tokenId: tokenId, created: false, owned: true };
+      metadata = {
+        ...metadata,
+        sale: sale ? sale : { price: 0 },
+        offers: offers ? offers.all : null,
+        highestOffer: offers ? offers.highest : { price: 0 },
+      };
       mOwned.push(metadata);
     }
 

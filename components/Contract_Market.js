@@ -5,21 +5,23 @@ import { ethers } from 'ethers';
 import { Globals } from './GlobalVariables';
 import { NftContract } from './Contract_NFT';
 import { db } from '../firebase';
-import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
+import { FirebaseBackend } from './Backend_Firebase';
+import { collection, addDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 
 export const MarketContract = createContext();
 
 export const Contract_Market = ({ children }) => {
   const { chainId, contract, contract_Market, signer, signerAddress } = useContext(NftContract);
-
+  const { setIsLoading, setIsLoadingText } = useContext(Globals);
+  const { setOfferData, setSaleData } = useContext(FirebaseBackend);
   // State Variables
 
   // Functions
   const getNonce = async () => {
-    const contract_Market_connected = contract_Market.connect(signer);
-    const nonce = await contract_Market_connected.getNonce();
+    let nonce = ethers.BigNumber.from(ethers.utils.randomBytes(32));
     return nonce;
   };
+
   const purchaseNft = async (tokenId, tokenOwner) => {
     const saleId = tokenId + '-' + tokenOwner;
     const docRef = db.collection('sale').doc(saleId);
@@ -32,6 +34,37 @@ export const Contract_Market = ({ children }) => {
     });
   };
   const sellNft = async (offerId) => {};
+
+  const setSale = async (metadata, price) => {
+    try {
+      setIsLoadingText('Sign your offer');
+      setIsLoading(true);
+
+      const signature = await signMessage(metadata.tokenId, price.toString(), 'sale');
+
+      await setSaleData(metadata.tokenId, signerAddress, price, signature);
+
+      setIsLoadingText('Successfully updated NFT price!');
+    } catch (e) {
+      setIsLoadingText('Failed to set price!');
+    }
+
+    setTimeout(() => setIsLoading(false), 2000);
+  };
+
+  const setOffer = async function (metadata, price) {
+    try {
+      setIsLoadingText('Sign your offer');
+      setIsLoading(true);
+
+      const signature = await signMessage(metadata.tokenId, price.toString(), 'offer');
+
+      await setOfferData(metadata.tokenId, signerAddress, price, signature);
+    } catch (e) {
+      setIsLoadingText('Failed to set price!');
+      setTimeout(() => setIsLoading(false), 2000);
+    }
+  };
 
   // Front End Functions
 
@@ -89,49 +122,8 @@ export const Contract_Market = ({ children }) => {
     console.log(`Verify finished! ${sigOwner} should be ${result}, which is: ${sigOwner == result}`);
   };
 
-  // Firebase Functions
-  const setOffer = async function (metadata, price) {
-    const signature = await signMessage(metadata.tokenId.toString(), price.toString(), 'offer');
-
-    const offer = {
-      tokenId: metadata.tokenId.toString(),
-      address: signerAddress.toString(),
-      price: price.toString(),
-      signature: signature,
-    };
-
-    console.log(`Offer amount: ${offer.price}`);
-
-    const uniqueId = offer.tokenId + '-' + offer.address;
-    const offerRef = doc(db, 'offer', uniqueId);
-
-    setDoc(offerRef, offer)
-      .then(() => console.log('Offer successfully set!'))
-      .catch((error) => console.error('Error setting offer: ', error));
-  };
-
-  const setSale = async function (metadata, price) {
-    const signature = await signMessage(metadata.tokenId, price.toString(), 'sale');
-
-    return;
-    const sale = {
-      tokenId: metadata.tokenId.toString(),
-      address: signerAddress.toString(),
-      price: price.toString(),
-      signature: signature,
-    };
-    console.log(`Setting NFT price: ${sale.price}`);
-
-    const uniqueId = sale.tokenId + '-' + sale.address;
-    const saleRef = doc(db, 'sale', uniqueId);
-
-    setDoc(saleRef, sale)
-      .then(() => console.log('Sale price sucessfully updated: ', sale.price))
-      .catch((error) => console.error('error updating NFT price: ', error));
-  };
-
   return (
-    <MarketContract.Provider value={{ contract_Market, signerAddress, purchaseNft, sellNft, setOffer, setSale }}>
+    <MarketContract.Provider value={{ contract_Market, signerAddress, purchaseNft, sellNft, setSale, setOffer }}>
       {children}
     </MarketContract.Provider>
   );
