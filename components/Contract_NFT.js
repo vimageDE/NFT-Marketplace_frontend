@@ -14,7 +14,7 @@ export const Contract_NFT = ({ children }) => {
   // get Global Variables
   const { setIsLoading, setIsLoadingText } = useContext(Globals);
   // get Firebase Variables
-  const { getSaleData, getOfferData } = useContext(FirebaseBackend);
+  const { getSaleData, getOfferData, subscribeToToken } = useContext(FirebaseBackend);
   // contract interaction Variables
   const { Moralis, isWeb3Enabled, chainId: chainIdHex } = useMoralis();
   const chainId = parseInt(chainIdHex);
@@ -27,6 +27,7 @@ export const Contract_NFT = ({ children }) => {
   const [signerAddress, setSignerAddress] = useState('');
   const [customAddress, setCustomAddress] = useState('');
   const [nftMetadata, setNftMetadata] = useState(null);
+  const [nftTokenPrevious, setNftTokenPrevious] = useState(null);
   // contract state variables
   const [hasProfile, setHasProfile] = useState(false);
   const [userHasProfile, setUserHasProfile] = useState(false);
@@ -49,6 +50,21 @@ export const Contract_NFT = ({ children }) => {
       updateContractValues();
     }
   }, [contract, customAddress]);
+  // Subscribe to a token ID
+  useEffect(() => {
+    if (nftMetadata) {
+      if (nftMetadata.tokenId !== nftTokenPrevious) {
+        setNftTokenPrevious(nftMetadata.tokenId);
+
+        // Subscribe
+        subscribeToToken(nftMetadata, setNftMetadata);
+        console.log('EVENT - Subscribed to Token: ', nftMetadata.tokenId);
+      }
+    } else {
+      setNftTokenPrevious(null);
+      // Unsubscribe
+    }
+  }, [nftMetadata]);
 
   // Set Contract
   async function updateContract() {
@@ -56,8 +72,8 @@ export const Contract_NFT = ({ children }) => {
     const s = p.getSigner();
     const sa = await s.getAddress();
     console.log(`chainId: ${chainId} - contract address: ${contractAddress}`);
-    const c = new ethers.Contract(contractAddress, abi, p);
-    const c_market = new ethers.Contract(contractAddress_Market, abi_market, p);
+    const c = new ethers.Contract(contractAddress, abi, s);
+    const c_market = new ethers.Contract(contractAddress_Market, abi_market, s);
     setProvider(p);
     setSigner(s);
     setSignerAddress(sa);

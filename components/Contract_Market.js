@@ -68,7 +68,7 @@ export const Contract_Market = ({ children }) => {
 
       const expirationTime = getTimestamp(24);
 
-      const signature = await signMessage(metadata.tokenId, price.toString(), 'sale', expirationTime);
+      const signature = await signMessage(metadata.tokenId, price.toString(), 'offer', expirationTime);
 
       await setOfferData(metadata.tokenId, signerAddress, price, expirationTime, signature);
 

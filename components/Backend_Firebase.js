@@ -4,7 +4,18 @@ import { useMoralis, useWeb3Contract } from 'react-moralis';
 import { ethers } from 'ethers';
 import { Globals } from './GlobalVariables';
 import { db } from '../firebase';
-import { collection, addDoc, doc, setDoc, getDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  doc,
+  setDoc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+} from 'firebase/firestore';
 
 export const FirebaseBackend = createContext();
 
@@ -87,8 +98,40 @@ export const Backend_Firebase = ({ children }) => {
     return offers;
   };
 
+  const subscribeToToken = async function (metadata, setMetadata) {
+    const qOffer = query(
+      collection(db, 'offer'),
+      where('tokenId', '==', metadata.tokenId.toString()),
+      orderBy('price', 'desc')
+    );
+
+    const unsubOffer = onSnapshot(qOffer, (snapshot) => {
+      const offers = snapshot.docs.map((doc) => doc.data());
+      metadata.offers = offers;
+      metadata.highestOffer = offers[0];
+
+      console.log('EVENT - Offers updated!');
+
+      setMetadata(metadata);
+    });
+
+    const saleId = metadata.tokenId + '-' + metadata.owner;
+    const docRef = doc(db, 'sale', saleId);
+    const unsubSale = onSnapshot(docRef, (doc) => {
+      if (doc.exists) {
+        console.log('EVENT - Sale data Updated: ', doc.data());
+        metadata.sale = doc.data();
+      } else {
+        console.log('EVENT - Sale data deleted!');
+        metadata.sale.price = 0;
+      }
+
+      setMetadata(metadata);
+    });
+  };
+
   return (
-    <FirebaseBackend.Provider value={{ setOfferData, setSaleData, getSaleData, getOfferData }}>
+    <FirebaseBackend.Provider value={{ setOfferData, setSaleData, getSaleData, getOfferData, subscribeToToken }}>
       {children}
     </FirebaseBackend.Provider>
   );

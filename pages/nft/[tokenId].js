@@ -8,7 +8,7 @@ import { Globals } from '../../components/GlobalVariables';
 import { MarketContract } from '../../components/Contract_Market';
 import Countdown from '../../components/Component_Countdown';
 import Link from 'next/link';
-import { FaRegClock, FaCoins } from 'react-icons/fa';
+import { FaRegClock, FaCoins, FaHome } from 'react-icons/fa';
 import { BiPurchaseTag, BiCart, BiSolidCoinStack } from 'react-icons/bi';
 import { RiContractRightLine } from 'react-icons/ri';
 import { GiCancel } from 'react-icons/gi';
@@ -85,7 +85,14 @@ function TokenPage() {
                 />
               </div>
 
-              <div className="w-4/6">
+              <div className="w-4/6 relative">
+                {nftMetadata.owner === signerAddress ? (
+                  <div className="absolute right-0 top-0 border-2 rounded-xl p-4">
+                    <FaHome className="mx-auto" /> <div>This is your NFT</div>
+                  </div>
+                ) : (
+                  <></>
+                )}
                 <div className="flex space-x-2 mb-16">
                   <div>CREATED BY</div>
                   <Link href={`/portfolio/${nftMetadata.creator}`}>
@@ -103,11 +110,14 @@ function TokenPage() {
                 </div>
 
                 <div className="  min-w-[250px] mt-8 border-2 rounded-xl bg-slate-50">
-                  {nftMetadata.sale.prev == 0 ? (
+                  {nftMetadata.sale.price !== 0 ? (
                     <div className="flex border-b-2 pl-8 py-2 space-x-2">
                       <FaRegClock className="my-auto" />
-                      <div>
-                        SALE IS ACTIVE: <Countdown expiryTimestamp={nftMetadata.sale.timestamp} />
+                      <div className="flex space">
+                        SALE IS ACTIVE:{' '}
+                        <div className="ml-2">
+                          <Countdown expiryTimestamp={nftMetadata.sale.timestamp} />
+                        </div>
                       </div>
                     </div>
                   ) : (
