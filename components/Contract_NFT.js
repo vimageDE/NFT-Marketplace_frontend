@@ -26,6 +26,7 @@ export const Contract_NFT = ({ children }) => {
   const [contract_Market, setContract_Market] = useState('');
   const [signerAddress, setSignerAddress] = useState('');
   const [customAddress, setCustomAddress] = useState('');
+  const [nftMetadata, setNftMetadata] = useState(null);
   // contract state variables
   const [hasProfile, setHasProfile] = useState(false);
   const [userHasProfile, setUserHasProfile] = useState(false);
@@ -81,11 +82,11 @@ export const Contract_NFT = ({ children }) => {
     const getOwnedArtworks_Callback = await contract.getArtworksOfOwner(address);
     const getCreatedArtworks_Callback = await contract.getCreatedArtworks(address);
     if (!userHasProfile) {
-      const getOwnSeriesName_Callback = await contract.getSeriesName(signerAddress);
+      const getOwnSeriesName_Callback = await getSeries(signerAddress);
       setUserHasProfile(getOwnSeriesName_Callback.length > 0);
       // console.log('test', getOwnSeriesName_Callback.toString());
     }
-    const getSeriesName_Callback = await contract.getSeriesName(address);
+    const getSeriesName_Callback = await getSeries(address);
     const getTitleIndex_Callback = await contract.getSeriesTitleToken(address);
     const mCreated = [];
     const mOwned = [];
@@ -115,9 +116,9 @@ export const Contract_NFT = ({ children }) => {
         const sale = await getSaleData(metadata);
         const offers = await getOfferData(metadata);
         if (sale) metadata.sale = sale;
-        if (offers) {
-          metadata.offers = offers.all;
-          metadata.highestOffer = offers.highest;
+        if (offers.length > 0) {
+          metadata.offers = offers;
+          metadata.highestOffer = offers[0];
         }
         // Add to array
         mOwned.push(metadata);
@@ -150,8 +151,8 @@ export const Contract_NFT = ({ children }) => {
       metadata = {
         ...metadata,
         sale: sale ? sale : { price: 0 },
-        offers: offers ? offers.all : null,
-        highestOffer: offers ? offers.highest : { price: 0 },
+        offers: offers ? offers : null,
+        highestOffer: offers ? offers[0] : { price: 0 },
       };
       mOwned.push(metadata);
     }
@@ -162,6 +163,41 @@ export const Contract_NFT = ({ children }) => {
 
     setMetadataCollection(mCreated);
     setMetadataCollectionOwned(mOwned);
+  }
+
+  async function getNftMetadata(tokenId) {
+    if (!contract) {
+      return;
+    }
+    const uri = await contract.tokenURI(tokenId);
+    if (!uri) {
+      return { owner: 0 };
+    }
+    const creator = await contract.getCreator(tokenId);
+    const owner = await contract.getOwner(tokenId);
+    const seriesName = (await getSeries(creator)).toString();
+    let metadata = await fetchMetadata(uri);
+    // Set custom data
+    metadata = {
+      ...metadata,
+      tokenId: tokenId,
+      owner: owner,
+      owned: owner == signerAddress,
+      creator: creator,
+      created: creator == signerAddress,
+      series: seriesName,
+    };
+    // Get Firebase data
+    const sale = await getSaleData(metadata);
+    const offers = await getOfferData(metadata);
+    // Add custom Metadata
+    metadata = {
+      ...metadata,
+      sale: sale ? sale : { price: 0 },
+      offers: offers ? offers : null,
+      highestOffer: offers ? offers[0] : { price: 0 },
+    };
+    return metadata;
   }
 
   // Contract NFT
@@ -183,6 +219,12 @@ export const Contract_NFT = ({ children }) => {
     const response = await tx.wait();
 
     updateContractValues();
+  };
+
+  const getSeries = async (address) => {
+    if (!contract) return;
+    const name = await contract.getSeriesName(address);
+    return name;
   };
 
   const setTitle = async (index) => {
@@ -268,11 +310,15 @@ export const Contract_NFT = ({ children }) => {
         metadataCollectionOwned,
         customAddress,
         setCustomAddress,
+        nftMetadata,
+        setNftMetadata,
         // Functions
         updateContractValues,
+        getNftMetadata,
         // Contract Functions,
         createArtwork,
         setSeries,
+        getSeries,
         setTitle,
         contractFunction,
         contractIsLoading,

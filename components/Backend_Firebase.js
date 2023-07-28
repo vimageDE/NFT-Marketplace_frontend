@@ -4,7 +4,7 @@ import { useMoralis, useWeb3Contract } from 'react-moralis';
 import { ethers } from 'ethers';
 import { Globals } from './GlobalVariables';
 import { db } from '../firebase';
-import { collection, addDoc, doc, setDoc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, getDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
 
 export const FirebaseBackend = createContext();
 
@@ -23,7 +23,7 @@ export const Backend_Firebase = ({ children }) => {
 
     console.log(`Offer amount: ${offer.price}`);
 
-    const uniqueId = offer.tokenId + '-' + offer.address;
+    const uniqueId = tokenId + '-' + address;
     const offerRef = doc(db, 'offer', uniqueId);
 
     try {
@@ -32,10 +32,6 @@ export const Backend_Firebase = ({ children }) => {
     } catch (error) {
       console.log('Error setting offer: ', error);
     }
-
-    setDoc(offerRef, offer)
-      .then(() => console.log('Offer successfully set!'))
-      .catch((error) => console.error('Error setting offer: ', error));
   };
 
   const setSaleData = async function (tokenId, address, price, signature) {
@@ -64,7 +60,7 @@ export const Backend_Firebase = ({ children }) => {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists) {
-      console.log('Document data:', docSnap.data());
+      console.log('Sale data: ', docSnap.data());
       return docSnap.data();
     } else {
       console.log('No such document!');
@@ -72,8 +68,21 @@ export const Backend_Firebase = ({ children }) => {
     }
   };
 
-  const getOfferData = async function (tokenId, tokenOwner) {
-    const offerId = metadata;
+  const getOfferData = async function (metadata, address) {
+    const q = query(
+      collection(db, 'offer'),
+      where('tokenId', '==', metadata.tokenId.toString()),
+      orderBy('price', 'desc')
+    );
+    const querySnap = await getDocs(q);
+
+    querySnap.forEach((doc) => {
+      console.log(doc.id, ' => ', doc.data());
+    });
+
+    const offers = querySnap.docs.map((doc) => doc.data());
+    // console.log('=> ', offers[0].price);
+    return offers;
   };
 
   return (

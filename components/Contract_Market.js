@@ -60,10 +60,13 @@ export const Contract_Market = ({ children }) => {
       const signature = await signMessage(metadata.tokenId, price.toString(), 'offer');
 
       await setOfferData(metadata.tokenId, signerAddress, price, signature);
+
+      setIsLoadingText('Successfully updated offer!');
     } catch (e) {
       setIsLoadingText('Failed to set price!');
-      setTimeout(() => setIsLoading(false), 2000);
     }
+
+    setTimeout(() => setIsLoading(false), 2000);
   };
 
   // Front End Functions

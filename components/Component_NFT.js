@@ -5,34 +5,66 @@ import { FirebaseBackend } from './Backend_Firebase';
 import Modal from 'react-modal';
 import { db } from '../firebase';
 import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
+import { useRouter } from 'next/router';
 
 export const NFT = ({ index, metadata, ownedSection }) => {
-  const { chainId, contract, signer, signerAddress, getImageUrl, ownProfile, setTitle, customAddress, getNonce } =
-    useContext(NftContract);
+  const {
+    chainId,
+    contract,
+    signer,
+    signerAddress,
+    getImageUrl,
+    ownProfile,
+    setTitle,
+    customAddress,
+    getNonce,
+    setNftMetadata,
+  } = useContext(NftContract);
   const { setOffer, setSale } = useContext(MarketContract);
   const { getSaleData, getOfferData } = useContext(FirebaseBackend);
 
   const [lightbox, setLightbox] = useState(false);
   const [inputSellPrice, setInputSellPrice] = useState('');
+  const [hover, setHover] = useState(false);
   // let owner = ownProfile && ownedSection ? signerAddress : customAddress;
+  const router = useRouter();
+
+  // Funcitons
+  const changeLightbox = (open) => {
+    if (open) {
+      router.push(`/nft/${metadata.tokenId}`);
+      setNftMetadata(metadata);
+    }
+
+    // setLightbox(open);
+    setHover(false);
+  };
 
   // HTML variables
-  let infoBelow = (
-    <>
-      <div className="text-center">Price: {metadata.sale.price}</div>
-      <div className="text-center">Max offer: {metadata.highestOffer.price}</div>
-    </>
-  );
-
   let buttonsBelow = <></>;
   let lightboxBelow = [];
   if (ownedSection && ownProfile) {
     buttonsBelow = (
-      <>
-        <button className="" onClick={() => setLightbox(true)}>
-          Sell
-        </button>
-      </>
+      <div className="pb-2 flex flex-col space-y-2 px-2">
+        {metadata.sale.price == 0 ? (
+          <button className="" onClick={() => changeLightbox(true)}>
+            Set Price
+          </button>
+        ) : (
+          <button className="" onClick={() => changeLightbox(true)}>
+            Your Price: {metadata.sale.price} eth
+          </button>
+        )}
+        {metadata.offers ? (
+          <button className="" onClick={() => changeLightbox(true)}>
+            Max offer: {metadata.highestOffer.price} eth
+          </button>
+        ) : (
+          <button className="" onClick={() => changeLightbox(true)}>
+            No offers
+          </button>
+        )}
+      </div>
     );
   } else if (ownProfile) {
     buttonsBelow = (
@@ -41,16 +73,16 @@ export const NFT = ({ index, metadata, ownedSection }) => {
       </button>
     );
   } else {
-    buttonsBelow = <button onClick={() => setLightbox(true)}>Buy</button>;
+    buttonsBelow = <button onClick={() => changeLightbox(true)}>Buy</button>;
   }
 
-  if (metadata.created) {
+  /* if (metadata.created) {
     lightboxBelow.push(
       <button className="bg-white text-slate-700" onClick={() => setTitle(index)}>
         Set Title Image
       </button>
     );
-  }
+  } */
   if (metadata.owner == signerAddress) {
     // User is Owner!
     lightboxBelow.push(
@@ -93,18 +125,60 @@ export const NFT = ({ index, metadata, ownedSection }) => {
   }
 
   return (
-    <div className="w-48 flex flex-col justify-center space-y-2">
+    <div>
       <div
-        className="bg-cover h-48 w-48 bg-center rounded"
-        style={{
-          backgroundImage: `url(${getImageUrl(metadata)})`,
-        }}
-      ></div>
-      {buttonsBelow}
-      {infoBelow}
+        className="overflow-hidden relative rounded-lg w-72 flex flex-col justify-center bg-slate-100 shadow-lg cursor-pointer"
+        onClick={() => changeLightbox(true)}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+      >
+        <div
+          className="bg-cover h-72 w-72 bg-center rounded-t-lg transition-transform duration-500"
+          style={{
+            backgroundImage: `url(${getImageUrl(metadata)})`,
+            transform: hover ? 'scale(1.05)' : 'scale(1)',
+          }}
+        ></div>
+        <div className="bg-white space-y-1 px-4 text-sm relative py-4 border-[1px] border-slate-300 rounded-b-lg">
+          <div>{metadata.name}</div>
+          <div className="font-bold">{metadata.sale.price + ' ETH'}</div>
+          <div>Best offer: {metadata.highestOffer.price} ETH</div>
+          <div className="absolute px-2 rounded text-center bottom-4 right-4 bg-slate-200 border-[1px] border-slate-400">
+            {'#' + metadata.tokenId}
+          </div>
+        </div>
+        <div
+          className="absolute w-full bottom-0 transform translate-y-full transition-transform duration-150"
+          style={{
+            transform: hover ? 'translateY(0)' : 'translateY(100%)',
+          }}
+        >
+          {ownProfile ? (
+            metadata.sale.price == 0 ? (
+              <button className="rounded-none w-full" onClick={() => changeLightbox(true)}>
+                Set Price
+              </button>
+            ) : (
+              <button className="rounded-none w-full" onClick={() => changeLightbox(true)}>
+                Update Price
+              </button>
+            )
+          ) : metadata.sale.price == 0 ? (
+            <button className="rounded-none w-full" onClick={() => changeLightbox(true)}>
+              Make Offer
+            </button>
+          ) : (
+            <button className="rounded-none w-full" onClick={() => changeLightbox(true)}>
+              Buy: {metadata.sale.price} eth
+            </button>
+          )}
+        </div>
+      </div>
+      {/*buttonsBelow*/}
       <Modal
         isOpen={lightbox}
-        onRequestClose={() => setLightbox(false)}
+        onRequestClose={() => changeLightbox(false)}
+        ariaHideApp={false}
         contentLabel="NFT Lightbox"
         className="m-auto bg-slate-700 w-1/2 rounded-xl shadow max-h-[800px] max-w-[500px]"
         overlayClassName="fixed inset-0 bg-black bg-opacity-75 flex"

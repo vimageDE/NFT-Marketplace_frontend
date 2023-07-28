@@ -119,7 +119,7 @@ export const CreateNft = () => {
 
   const uploadToIPFS = async (file) => {
     const metadata = await client.store({
-      name: file.name,
+      name: selectedName,
       description: 'NFT Image',
       image: new File([file], file.name, { type: file.type }),
     });
