@@ -5,10 +5,13 @@ import Header from '../../components/Component_Header';
 import { LoadingOverlay } from '../../components/Component_Loading';
 import { NftContract } from '../../components/Contract_NFT';
 import { Globals } from '../../components/GlobalVariables';
+import { MarketContract } from '../../components/Contract_Market';
+import Countdown from '../../components/Component_Countdown';
 import Link from 'next/link';
 import { FaRegClock, FaCoins } from 'react-icons/fa';
 import { BiPurchaseTag, BiCart, BiSolidCoinStack } from 'react-icons/bi';
 import { RiContractRightLine } from 'react-icons/ri';
+import { GiCancel } from 'react-icons/gi';
 import Modal from 'react-modal';
 
 function TokenPage() {
@@ -16,9 +19,12 @@ function TokenPage() {
   const { setIsLoading, setIsLoadingText, getAddressShortened, getAddressLink } = useContext(Globals);
   const { nftMetadata, getNftMetadata, setNftMetadata, getImageUrl, getSeries, signerAddress } =
     useContext(NftContract);
+  const { setOffer, setSale } = useContext(MarketContract);
+
   // state variables
   const [ownerName, setOwnerName] = useState('');
   const [makeOffer, setMakeOffer] = useState(false);
+  const [updatePrice, setUpdatePrice] = useState(false);
   const [inputSell, setInputSell] = useState(0.1);
   // Constants
   const router = useRouter();
@@ -26,7 +32,7 @@ function TokenPage() {
 
   // Functions
   const loadToken = async () => {
-    setIsLoadingText('Loading NFT');
+    // setIsLoadingText('Loading NFT');
     // setIsLoading(true);
     if (!nftMetadata || nftMetadata.tokenId !== tokenId) {
       const metadata = await getNftMetadata(tokenId);
@@ -97,10 +103,20 @@ function TokenPage() {
                 </div>
 
                 <div className="  min-w-[250px] mt-8 border-2 rounded-xl bg-slate-50">
-                  <div className="flex border-b-2 pl-8 py-2 space-x-2">
-                    <FaRegClock className="my-auto" />
-                    <div>SALE IS ACTIVE</div>
-                  </div>
+                  {nftMetadata.sale.prev == 0 ? (
+                    <div className="flex border-b-2 pl-8 py-2 space-x-2">
+                      <FaRegClock className="my-auto" />
+                      <div>
+                        SALE IS ACTIVE: <Countdown expiryTimestamp={nftMetadata.sale.timestamp} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex border-b-2 pl-8 py-2 space-x-2">
+                      <GiCancel className="my-auto" />
+                      <div className="">NO SALE</div>
+                    </div>
+                  )}
+
                   <div className="px-8 py-3">
                     <div className="grid grid-cols-2 text-center">
                       <div>
@@ -129,7 +145,10 @@ function TokenPage() {
                       </div>
                     ) : (
                       <div className="flex space-x-4 pt-4">
-                        <button className="w-full flex justify-center hover:bg-slate-400">
+                        <button
+                          className="w-full flex justify-center hover:bg-slate-400"
+                          onClick={() => setUpdatePrice(true)}
+                        >
                           <BiCart className="my-auto mr-1" />
                           Update Price
                         </button>
@@ -149,59 +168,6 @@ function TokenPage() {
                   </div>
                 </div>
               </div>
-
-              <Modal
-                isOpen={makeOffer}
-                onRequestClose={() => {
-                  setMakeOffer(false);
-                }}
-                contentLabel="Create Profile"
-                className="m-auto bg-slate-700 w-1/2 rounded-xl shadow max-h-[800px] max-w-[600px]"
-                overlayClassName="fixed inset-0 bg-black bg-opacity-75 flex"
-              >
-                <div className="flex space-x-4">
-                  <div className="relative py-auto w-3/6 border-2 rounded-lg">
-                    <img src={getImageUrl(nftMetadata)} className="object-cover h-full" />
-                  </div>
-                  <div className="text-center text-white p-4 py-16 flex flex-col space-y-2">
-                    <div className="uppercase text-xs">Create offer for:</div>
-                    <h2 className="text-6xl">
-                      {nftMetadata.name} #{nftMetadata.tokenId}
-                    </h2>
-                    <div className="border-2 w-fit mx-auto p-4 rounded-xl">
-                      <div className="text-xs">current max offer:</div>
-                      <div className="text-xl font-bold">
-                        {nftMetadata.highestOffer.price !== 0 ? nftMetadata.highestOffer.price + ' ETH' : '-'}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs">your offer</div>
-                      <button
-                        className="font-black bg-opacity-0 hover:bg-opacity-0 hover:text-gold"
-                        onClick={() => setInputSell((prev) => (prev > 0 ? parseFloat((prev - 0.1).toFixed(3)) : 0))}
-                      >
-                        -
-                      </button>
-                      <input
-                        id="inputSell"
-                        className="rounded-full w-32 h-8 text-black px-4 text-center"
-                        type="text"
-                        value={inputSell}
-                        onChange={handleInputChange}
-                      ></input>
-                      <button
-                        className="font-black bg-opacity-0 hover:bg-opacity-0 hover:text-gold"
-                        onClick={() => setInputSell((prev) => parseFloat((prev + 0.1).toFixed(3)))}
-                      >
-                        +
-                      </button>
-                    </div>
-                    <div>
-                      <button className="bg-gold hover:bg-slate-400">Make Offer</button>
-                    </div>
-                  </div>
-                </div>
-              </Modal>
             </div>
             <div className="px-12 mx-auto max-w-[1500px] grid grid-cols-1 md:grid-cols-2 space-x-4 justify-items-center">
               <div className="border-2 rounded-lg p-4 w-full bg-slate-50">
@@ -253,7 +219,9 @@ function TokenPage() {
                             <RiContractRightLine className="my-auto mr-2" /> {offer.price} ETH
                           </div>
                           <div>{getAddressLink(offer.address, getAddressShortened(offer.address))}</div>
-                          <div>Ablaufdatum</div>
+                          <div>
+                            <Countdown expiryTimestamp={offer.timestamp} />
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -267,6 +235,114 @@ function TokenPage() {
                 </div>
               </div>
             </div>
+            <Modal
+              isOpen={makeOffer}
+              onRequestClose={() => {
+                setMakeOffer(false);
+              }}
+              contentLabel="Create Profile"
+              className="m-auto bg-slate-700 w-1/2 rounded-xl shadow max-h-[800px] max-w-[600px]"
+              overlayClassName="fixed inset-0 bg-black bg-opacity-75 flex"
+            >
+              <div className="flex space-x-4">
+                <div className="relative py-auto w-3/6 border-2 rounded-lg">
+                  <img src={getImageUrl(nftMetadata)} className="object-cover h-full" />
+                </div>
+                <div className="text-center text-white p-4 py-16 flex flex-col space-y-2">
+                  <div className="uppercase text-xs">Create offer for:</div>
+                  <h2 className="text-6xl">
+                    {nftMetadata.name} #{nftMetadata.tokenId}
+                  </h2>
+                  <div className="border-2 w-fit mx-auto p-4 rounded-xl">
+                    <div className="text-xs">current max offer:</div>
+                    <div className="text-xl font-bold">
+                      {nftMetadata.highestOffer.price !== 0 ? nftMetadata.highestOffer.price + ' ETH' : '-'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs">your offer</div>
+                    <button
+                      className="font-black bg-opacity-0 hover:bg-opacity-0 hover:text-gold"
+                      onClick={() => setInputSell((prev) => (prev > 0 ? parseFloat((prev - 0.1).toFixed(3)) : 0))}
+                    >
+                      -
+                    </button>
+                    <input
+                      id="inputSell"
+                      className="rounded-full w-32 h-8 text-black px-4 text-center"
+                      type="text"
+                      value={inputSell}
+                      onChange={handleInputChange}
+                    ></input>
+                    <button
+                      className="font-black bg-opacity-0 hover:bg-opacity-0 hover:text-gold"
+                      onClick={() => setInputSell((prev) => parseFloat((prev + 0.1).toFixed(3)))}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div>
+                    <button className="bg-gold hover:bg-slate-400" onClick={() => setOffer(nftMetadata, inputSell)}>
+                      Make Offer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </Modal>
+            <Modal
+              isOpen={updatePrice}
+              onRequestClose={() => {
+                setUpdatePrice(false);
+              }}
+              contentLabel="Create Profile"
+              className="m-auto bg-slate-700 w-1/2 rounded-xl shadow max-h-[800px] max-w-[600px]"
+              overlayClassName="fixed inset-0 bg-black bg-opacity-75 flex"
+            >
+              <div className="flex space-x-4">
+                <div className="relative py-auto w-3/6 border-2 rounded-lg">
+                  <img src={getImageUrl(nftMetadata)} className="object-cover h-full" />
+                </div>
+                <div className="text-center text-white p-4 py-16 flex flex-col space-y-2">
+                  <div className="uppercase text-xs">Update Sale for:</div>
+                  <h2 className="text-6xl">
+                    {nftMetadata.name} #{nftMetadata.tokenId}
+                  </h2>
+                  <div className="border-2 w-fit mx-auto p-4 rounded-xl">
+                    <div className="text-xs">current price:</div>
+                    <div className="text-xl font-bold">
+                      {nftMetadata.sale.price !== 0 ? nftMetadata.sale.price + ' ETH' : '-'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs">new price</div>
+                    <button
+                      className="font-black bg-opacity-0 hover:bg-opacity-0 hover:text-gold"
+                      onClick={() => setInputSell((prev) => (prev > 0 ? parseFloat((prev - 0.1).toFixed(3)) : 0))}
+                    >
+                      -
+                    </button>
+                    <input
+                      id="inputSell"
+                      className="rounded-full w-32 h-8 text-black px-4 text-center"
+                      type="text"
+                      value={inputSell}
+                      onChange={handleInputChange}
+                    ></input>
+                    <button
+                      className="font-black bg-opacity-0 hover:bg-opacity-0 hover:text-gold"
+                      onClick={() => setInputSell((prev) => parseFloat((prev + 0.1).toFixed(3)))}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div>
+                    <button className="bg-gold hover:bg-slate-400" onClick={() => setSale(nftMetadata, inputSell)}>
+                      Update Price
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </Modal>
           </div>
         ) : (
           <h2 className="text-center mt-32 text-slate-700 text-4xl">No Token with ID '{tokenId}' available</h2>

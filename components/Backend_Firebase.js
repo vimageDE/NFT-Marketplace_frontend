@@ -13,11 +13,12 @@ export const Backend_Firebase = ({ children }) => {
   // State Variables
 
   // Firebase Functions
-  const setOfferData = async function (tokenId, address, price, signature) {
+  const setOfferData = async function (tokenId, address, price, timestamp, signature) {
     const offer = {
       tokenId: tokenId.toString(),
       address: address.toString(),
       price: price.toString(),
+      timestamp: timestamp.toString(),
       signature: signature,
     };
 
@@ -34,11 +35,12 @@ export const Backend_Firebase = ({ children }) => {
     }
   };
 
-  const setSaleData = async function (tokenId, address, price, signature) {
+  const setSaleData = async function (tokenId, address, price, timestamp, signature) {
     const sale = {
       tokenId: tokenId.toString(),
       address: address.toString(),
       price: price.toString(),
+      timestamp: timestamp.toString(),
       signature: signature,
     };
     console.log(`Setting NFT price: ${sale.price}`);
