@@ -19,7 +19,7 @@ function TokenPage() {
   const { setIsLoading, setIsLoadingText, getAddressShortened, getAddressLink } = useContext(Globals);
   const { nftMetadata, getNftMetadata, setNftMetadata, getImageUrl, getSeries, signerAddress } =
     useContext(NftContract);
-  const { setOffer, setSale } = useContext(MarketContract);
+  const { setOffer, setSale, sellNft } = useContext(MarketContract);
 
   // state variables
   const [ownerName, setOwnerName] = useState('');
@@ -114,7 +114,7 @@ function TokenPage() {
                     <div className="flex border-b-2 pl-8 py-2 space-x-2">
                       <FaRegClock className="my-auto" />
                       <div className="flex space">
-                        SALE IS ACTIVE:{' '}
+                        SALE IS ACTIVE:
                         <div className="ml-2">
                           <Countdown expiryTimestamp={nftMetadata.sale.timestamp} />
                         </div>
@@ -168,7 +168,10 @@ function TokenPage() {
                             No Offer
                           </button>
                         ) : (
-                          <button className="w-full bg-gold hover:bg-slate-400 flex justify-center">
+                          <button
+                            className="w-full bg-gold hover:bg-slate-400 flex justify-center"
+                            onClick={() => sellNft(nftMetadata)}
+                          >
                             <BiPurchaseTag className="my-auto mr-1" />
                             Accept Offer
                           </button>

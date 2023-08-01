@@ -2,7 +2,14 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useMoralis, useWeb3Contract } from 'react-moralis';
 import { ethers } from 'ethers';
-import { contractAddresses, abi, contractAddresses_Market, abi_market } from '../constants';
+import {
+  contractAddresses,
+  abi,
+  contractAddresses_Market,
+  abi_market,
+  contractAddresses_Weth,
+  abi_Weth,
+} from '../constants';
 import { Globals } from './GlobalVariables';
 import { FirebaseBackend } from './Backend_Firebase';
 import { db } from '../firebase';
@@ -22,8 +29,11 @@ export const Contract_NFT = ({ children }) => {
   const [signer, setSigner] = useState('');
   const contractAddress = chainId in contractAddresses ? contractAddresses[chainId][0] : null;
   const contractAddress_Market = chainId in contractAddresses_Market ? contractAddresses_Market[chainId][0] : null;
+  const contractAddress_Weth = chainId in contractAddresses_Weth ? contractAddresses_Weth[chainId][0] : null;
+  const contractAbi_Weth = chainId in abi_Weth ? abi_Weth[chainId][0] : null;
   const [contract, setContract] = useState('');
   const [contract_Market, setContract_Market] = useState('');
+  const [contract_Weth, setContract_Weth] = useState('');
   const [signerAddress, setSignerAddress] = useState('');
   const [customAddress, setCustomAddress] = useState('');
   const [nftMetadata, setNftMetadata] = useState(null);
@@ -74,11 +84,13 @@ export const Contract_NFT = ({ children }) => {
     console.log(`chainId: ${chainId} - contract address: ${contractAddress}`);
     const c = new ethers.Contract(contractAddress, abi, s);
     const c_market = new ethers.Contract(contractAddress_Market, abi_market, s);
+    const c_weth = new ethers.Contract(contractAddress_Weth, contractAbi_Weth, s);
     setProvider(p);
     setSigner(s);
     setSignerAddress(sa);
     setContract(c);
     setContract_Market(c_market);
+    setContract_Weth(c_weth);
   }
 
   // Update UI
@@ -316,6 +328,7 @@ export const Contract_NFT = ({ children }) => {
         contract,
         setContract,
         contract_Market,
+        contract_Weth,
         // State Variables
         hasProfile,
         userHasProfile,

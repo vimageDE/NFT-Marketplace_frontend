@@ -3,7 +3,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useMoralis, useWeb3Contract } from 'react-moralis';
 import { ethers } from 'ethers';
 import { Globals } from './GlobalVariables';
-import { db } from '../firebase';
+import { db, functions } from '../firebase';
 import {
   collection,
   addDoc,
@@ -16,6 +16,7 @@ import {
   orderBy,
   onSnapshot,
 } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 
 export const FirebaseBackend = createContext();
 
@@ -23,14 +24,18 @@ export const Backend_Firebase = ({ children }) => {
   const { setIsLoading, setIsLoadingText } = useContext(Globals);
   // State Variables
 
+  // Cloud Functions
+  const createTestDocument = httpsCallable(functions, 'createTestDocument');
+
   // Firebase Functions
-  const setOfferData = async function (tokenId, address, price, timestamp, signature) {
+  const setOfferData = async function (tokenId, address, price, timestamp, signature, nonce) {
     const offer = {
       tokenId: tokenId.toString(),
       address: address.toString(),
       price: price.toString(),
       timestamp: timestamp.toString(),
       signature: signature,
+      nonce: nonce.toString(),
     };
 
     console.log(`Offer amount: ${offer.price}`);
@@ -46,13 +51,14 @@ export const Backend_Firebase = ({ children }) => {
     }
   };
 
-  const setSaleData = async function (tokenId, address, price, timestamp, signature) {
+  const setSaleData = async function (tokenId, address, price, timestamp, signature, nonce) {
     const sale = {
       tokenId: tokenId.toString(),
       address: address.toString(),
       price: price.toString(),
       timestamp: timestamp.toString(),
       signature: signature,
+      nonce: nonce.toString(),
     };
     console.log(`Setting NFT price: ${sale.price}`);
 
@@ -73,10 +79,10 @@ export const Backend_Firebase = ({ children }) => {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists) {
-      console.log('Sale data: ', docSnap.data());
+      // console.log('Sale data: ', docSnap.data());
       return docSnap.data();
     } else {
-      console.log('No such document!');
+      // console.log('No such document!');
       return null;
     }
   };
@@ -90,7 +96,7 @@ export const Backend_Firebase = ({ children }) => {
     const querySnap = await getDocs(q);
 
     querySnap.forEach((doc) => {
-      console.log(doc.id, ' => ', doc.data());
+      // console.log(doc.id, ' => ', doc.data());
     });
 
     const offers = querySnap.docs.map((doc) => doc.data());
@@ -130,8 +136,21 @@ export const Backend_Firebase = ({ children }) => {
     });
   };
 
+  // Firebase Server Functions
+  const testInteraction = async function () {
+    try {
+      const result = await createTestDocument({});
+      // do something with the result
+      console.log('The Firebase Cloud call was a success: ', result);
+    } catch (error) {
+      console.error('Interacting with the Firebase Cloud failed: ', error);
+    }
+  };
+
   return (
-    <FirebaseBackend.Provider value={{ setOfferData, setSaleData, getSaleData, getOfferData, subscribeToToken }}>
+    <FirebaseBackend.Provider
+      value={{ setOfferData, setSaleData, getSaleData, getOfferData, subscribeToToken, testInteraction }}
+    >
       {children}
     </FirebaseBackend.Provider>
   );

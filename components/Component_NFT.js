@@ -33,7 +33,7 @@ export const NFT = ({ index, metadata, ownedSection }) => {
   const changeLightbox = (open) => {
     if (open) {
       router.push(`/nft/${metadata.tokenId}`);
-      setNftMetadata(metadata);
+      // setNftMetadata(metadata);
     }
 
     // setLightbox(open);

@@ -8,6 +8,7 @@ function Countdown({ expiryTimestamp }) {
       hours: Math.floor(diff / 3600),
       minutes: Math.floor((diff % 3600) / 60),
       seconds: Math.floor((diff % 3600) % 60),
+      expired: diff < 0,
     };
   };
 
@@ -21,10 +22,12 @@ function Countdown({ expiryTimestamp }) {
     return () => clearInterval(timer);
   }, []);
 
-  return (
+  return !timeLeft.expired ? (
     <div>
       {timeLeft.hours}h, {timeLeft.minutes}m, {timeLeft.seconds}s
     </div>
+  ) : (
+    <div>Expired</div>
   );
 }
 
