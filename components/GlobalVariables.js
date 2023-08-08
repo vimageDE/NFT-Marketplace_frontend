@@ -48,6 +48,10 @@ export const GlobalVariables = ({ children }) => {
     router.push(`/portfolio/${address}`);
   };
 
+  const goHome = () => {
+    router.push('/');
+  };
+
   return (
     <Globals.Provider
       value={{
@@ -65,6 +69,7 @@ export const GlobalVariables = ({ children }) => {
         getAddressLink,
         getTimestampDate,
         openAddress,
+        goHome,
       }}
     >
       {children}

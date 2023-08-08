@@ -15,6 +15,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   onSnapshot,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
@@ -153,9 +154,9 @@ export const Backend_Firebase = ({ children }) => {
   };
 
   const getBrowseData = async function () {
-    const q = query(collection(db, 'info'), orderBy('timestamp', 'desc'));
+    const q = query(collection(db, 'info'), orderBy('timestamp', 'desc'), limit(20));
     const querySnap = await getDocs(q);
-    const all = querySnap.docs.map((doc) => doc.data());
+    const all = querySnap.docs.map((doc) => doc.data().tokenId);
     const lastSales = await getLastSales();
     const highestSales = await getHighestSales();
     const browse = {
@@ -167,16 +168,16 @@ export const Backend_Firebase = ({ children }) => {
   };
 
   const getLastSales = async function () {
-    const q = query(collection(db, 'transactions'), orderBy('timestamp', 'desc'));
+    const q = query(collection(db, 'transactions'), orderBy('timestamp', 'desc'), limit(20));
     const querySnap = await getDocs(q);
-    const lastSales = querySnap.docs.map((doc) => doc.data());
+    const lastSales = querySnap.docs.map((doc) => doc.data().tokenId);
     return lastSales;
   };
 
   const getHighestSales = async function () {
-    const q = query(collection(db, 'transactions'), orderBy('price', 'desc'));
+    const q = query(collection(db, 'transactions'), orderBy('price', 'desc'), limit(20));
     const querySnap = await getDocs(q);
-    const highestSales = querySnap.docs.map((doc) => doc.data());
+    const highestSales = querySnap.docs.map((doc) => doc.data().tokenId);
     return highestSales;
   };
 

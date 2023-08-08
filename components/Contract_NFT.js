@@ -2,6 +2,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useMoralis, useWeb3Contract } from 'react-moralis';
 import { ethers } from 'ethers';
+import { useRouter } from 'next/router';
 import {
   contractAddresses,
   abi,
@@ -38,6 +39,7 @@ export const Contract_NFT = ({ children }) => {
   const [signerAddress, setSignerAddress] = useState('');
   const [customAddress, setCustomAddress] = useState('');
   const [nftMetadata, setNftMetadata] = useState(null);
+  const [nftMetadataAll, setNftMetadataAll] = useState([]);
   const [nftTokenPrevious, setNftTokenPrevious] = useState(null);
   // contract state variables
   const [hasProfile, setHasProfile] = useState(false);
@@ -47,6 +49,9 @@ export const Contract_NFT = ({ children }) => {
   const [seriesTitle, setSeriesTitle] = useState(0);
   const [metadataCollection, setMetadataCollection] = useState([]);
   const [metadataCollectionOwned, setMetadataCollectionOwned] = useState([]);
+
+  const router = useRouter();
+  const { pathname } = router;
 
   // Update Contract When isWeb3 is Enabled or changes
   useEffect(() => {
@@ -76,7 +81,11 @@ export const Contract_NFT = ({ children }) => {
       // Unsubscribe
     }
   }, [nftMetadata]);
-
+  // Check if it is the own profile
+  useEffect(() => {
+    const isOwnProfile = customAddress == signerAddress && window.location.pathname.includes('portfolio/'); // || !customAddress;
+    setOwnProfile(isOwnProfile);
+  }, [pathname]);
   // Set Contract
   async function updateContract() {
     const p = new ethers.providers.Web3Provider(window.ethereum);
@@ -98,9 +107,9 @@ export const Contract_NFT = ({ children }) => {
   async function updateContractValues() {
     if (!contract || !signerAddress) return;
 
-    const isOwnProfile = !customAddress || customAddress == signerAddress;
+    // const isOwnProfile = customAddress == signerAddress && window.location.pathname.includes('portfolio/'); // || !customAddress;
     // console.log('Is own profile? ', isOwnProfile);
-    setOwnProfile(isOwnProfile);
+    // setOwnProfile(isOwnProfile);
     const address = customAddress ? customAddress : signerAddress;
 
     if (!ethers.utils.isAddress(address)) {
@@ -235,6 +244,23 @@ export const Contract_NFT = ({ children }) => {
     return metadata;
   }
 
+  async function getNftMetadataGroup(tokenIds) {
+    const dataPromises = tokenIds.map(async (tokenId) => {
+      if (nftMetadataAll[tokenId]) {
+        return nftMetadataAll[tokenId];
+      } else {
+        const metadata = await getNftMetadata(tokenId);
+        let allData = nftMetadataAll;
+        allData[tokenId] = metadata;
+        setNftMetadataAll(allData);
+        return metadata;
+      }
+    });
+
+    const data = await Promise.all(dataPromises);
+    return data;
+  }
+
   // Contract NFT
   const {
     runContractFunction: contractFunction,
@@ -364,6 +390,7 @@ export const Contract_NFT = ({ children }) => {
         // IPFS
         fetchMetadata,
         getImageUrl,
+        getNftMetadataGroup,
       }}
     >
       {children}

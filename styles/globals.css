@@ -5,6 +5,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes scrollRightToLeft {
+    0% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+}
+
 @layer base{
     html {
         @apply text-black;
@@ -26,4 +35,6 @@
     input{
         @apply rounded-xl h-8 pl-8;
     }
+      
 }
+  

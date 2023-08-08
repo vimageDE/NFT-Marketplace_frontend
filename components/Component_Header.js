@@ -5,8 +5,8 @@ import { Globals } from './GlobalVariables';
 import { useRouter } from 'next/router';
 
 export default function Header() {
-  const { hasProfile, userHasProfile, setCustomAddress, ownProfile } = useContext(NftContract);
-  const { setCreateNftPopup, openAddress } = useContext(Globals);
+  const { hasProfile, userHasProfile, setCustomAddress, ownProfile, signerAddress } = useContext(NftContract);
+  const { setCreateNftPopup, openAddress, goHome } = useContext(Globals);
   const [searchInput, setSearchInput] = useState('');
 
   const router = useRouter();
@@ -14,7 +14,7 @@ export default function Header() {
   let profileButton = <div></div>;
   if (userHasProfile && !ownProfile) {
     profileButton = (
-      <button className="text-slate-700 rounded-3xl bg-white" onClick={() => setCustomAddress('')}>
+      <button className="text-slate-700 rounded-3xl bg-white" onClick={() => openAddress(signerAddress)}>
         Your Profile
       </button>
     );
@@ -27,9 +27,11 @@ export default function Header() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 justify-items-center space-y-4 items-center p-5 border-b-2 border-white border-opacity-0 bg-slate-700 bg-opacity-100">
+    <div className="grid grid-cols-1 lg:grid-cols-3 justify-items-center lg:space-y-0 space-y-4 items-center p-5 border-b-2 border-white border-opacity-0 bg-slate-700 bg-opacity-100">
       <div className="flex mt-auto">
-        <h1 className="font-blog text-4xl font-black pr-8">NFT Portfolio</h1>
+        <button className="mr-8 hover:bg-opacity-0 bg-opacity-0 p-0 py-0 px-0 m-0" onClick={() => goHome()}>
+          <h1 className="font-blog text-3xl font-black ">NFT Portfolio</h1>
+        </button>
         {profileButton}
       </div>
       <div className="relative w-full max-w-[300px]">
@@ -55,7 +57,7 @@ export default function Header() {
       </div>
       <div className="flex">
         {userHasProfile ? (
-          <button className="text-slate-700 rounded-3xl bg-white" onClick={() => setCreateNftPopup(true)}>
+          <button className="text-slate-700 rounded-3xl min-w-fit bg-white" onClick={() => setCreateNftPopup(true)}>
             Create NFT
           </button>
         ) : (
