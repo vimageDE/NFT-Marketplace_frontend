@@ -1,16 +1,21 @@
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import UserProfile from '../../components/Component_UserProfile';
 import Head from 'next/head';
 import Header from '../../components/Component_Header';
 import { useRouter } from 'next/router';
 import { NftContract } from '../../components/Contract_NFT';
+import { CreateNft } from '../../components/Component_CreateNft';
+import { LoadingOverlay } from '../../components/Component_Loading';
 
 export default function Portfolio() {
   const { hasProfile, userHasProfile, setCustomAddress, ownProfile } = useContext(NftContract);
 
   const router = useRouter();
   const { address } = router.query;
-  setCustomAddress(address);
+
+  useEffect(() => {
+    setCustomAddress(address);
+  });
 
   return (
     <div>
@@ -21,6 +26,8 @@ export default function Portfolio() {
       </Head>
       <Header />
       <UserProfile />
+      <CreateNft className="" />
+      <LoadingOverlay />
     </div>
   );
 }

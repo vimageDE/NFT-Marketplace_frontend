@@ -13,7 +13,8 @@ const client = new NFTStorage({
 
 export default function CreateProfile() {
   const { isWeb3Enabled } = useMoralis();
-  const { signerAddress, createArtwork, setSeries, hasProfile, fetchMetadata, getImageUrl } = useContext(NftContract);
+  const { signerAddress, createArtwork, setSeries, hasProfile, setCustomAddress, fetchMetadata, getImageUrl } =
+    useContext(NftContract);
   const { isLoading, setIsLoading, setIsLoadingText, setCreateNftPopup, profileName, setProfileName } =
     useContext(Globals);
   // UI State Variables

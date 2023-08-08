@@ -21,7 +21,8 @@ export const Contract_NFT = ({ children }) => {
   // get Global Variables
   const { setIsLoading, setIsLoadingText } = useContext(Globals);
   // get Firebase Variables
-  const { getSaleData, getOfferData, subscribeToToken } = useContext(FirebaseBackend);
+  const { getSaleData, getOfferData, getTransactionData, getInfoData, subscribeToToken, creationEvent } =
+    useContext(FirebaseBackend);
   // contract interaction Variables
   const { Moralis, isWeb3Enabled, chainId: chainIdHex } = useMoralis();
   const chainId = parseInt(chainIdHex);
@@ -185,7 +186,9 @@ export const Contract_NFT = ({ children }) => {
       mOwned.push(metadata);
     }
 
-    setHasProfile(getCreatedArtworks_Callback.length > 0);
+    setHasProfile(
+      getCreatedArtworks_Callback.length > 0 || getOwnedArtworks_Callback.length > 0 || getSeriesName_Callback
+    );
     setSeriesName(getSeriesName_Callback.toString());
     setSeriesTitle(getTitleIndex_Callback);
 
@@ -218,12 +221,16 @@ export const Contract_NFT = ({ children }) => {
     // Get Firebase data
     const sale = await getSaleData(metadata);
     const offers = await getOfferData(metadata);
+    const transactions = await getTransactionData(metadata);
+    const info = await getInfoData(metadata);
     // Add custom Metadata
     metadata = {
       ...metadata,
       sale: sale ? sale : { price: 0 },
       offers: offers ? offers : null,
       highestOffer: offers ? offers[0] : { price: 0 },
+      transactions: transactions ? transactions : null,
+      info: info,
     };
     return metadata;
   }
@@ -242,11 +249,15 @@ export const Contract_NFT = ({ children }) => {
   });
 
   const setSeries = async (name) => {
-    const contractConnected = contract.connect(signer);
-    const tx = await contractConnected.setSeriesName(name);
-    const response = await tx.wait();
+    try {
+      const contractConnected = contract.connect(signer);
+      const tx = await contractConnected.setSeriesName(name);
+      const response = await tx.wait();
 
-    updateContractValues();
+      updateContractValues();
+    } catch (e) {
+      throw new Error('Setting series name failed');
+    }
   };
 
   const getSeries = async (address) => {
@@ -288,14 +299,12 @@ export const Contract_NFT = ({ children }) => {
     if (ArtworkCreatedEvent) {
       const tokenId = ArtworkCreatedEvent.args.tokenId.toString();
       const address = ArtworkCreatedEvent.args.owner.toString();
+      await creationEvent(tokenId, tokenURI, chainId);
       console.log(`Artwork with ID ${tokenId} was created by ${address}.`);
     } else {
       console.error('ArtworkCreated event not found in the transaction receipt.');
     }
-
     updateContractValues();
-
-    return tokenId;
   };
 
   // IPFS

@@ -1,22 +1,21 @@
 import Head from 'next/head';
 import Header from '../components/Component_Header';
-import UserProfile from '../components/Component_UserProfile';
-import Browse from '../components/Component_Browse';
+import { NftContract } from '../components/Contract_NFT';
 import CreateProfile from '../components/Component_CreateProfile';
+import React, { useState, useContext, useEffect } from 'react';
 import { useMoralis } from 'react-moralis';
 import { LoadingOverlay } from '../components/Component_Loading';
-import { Globals } from '../components/GlobalVariables';
-import { NftContract } from '../components/Contract_NFT';
-import { useContext } from 'react';
 import { CreateNft } from '../components/Component_CreateNft';
 
 const supportedChains = ['31337', '11155111'];
-const bgImage = '/background-image.jpg';
 
-export default function Home() {
-  const { isLoading, isLoadingText } = useContext(Globals);
-  const { hasProfile, userHasProfile, ownProfile } = useContext(NftContract);
+export default function Create() {
   const { isWeb3Enabled, chainId } = useMoralis();
+  const { hasProfile, userHasProfile, ownProfile, setCustomAddress } = useContext(NftContract);
+
+  useEffect(() => {
+    setCustomAddress('');
+  });
 
   return (
     <div
@@ -33,8 +32,9 @@ export default function Home() {
         <div>
           {supportedChains.includes(parseInt(chainId).toString()) ? (
             <>
-              <Browse />
-              {/*<div className="">{ownProfile && !userHasProfile ? <CreateProfile /> : <UserProfile />}</div>*/}
+              <div className="">
+                {ownProfile && !userHasProfile ? <CreateProfile /> : <div>Profile already created</div>}
+              </div>
               <CreateNft className="" />
             </>
           ) : (

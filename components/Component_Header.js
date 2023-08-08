@@ -6,7 +6,7 @@ import { useRouter } from 'next/router';
 
 export default function Header() {
   const { hasProfile, userHasProfile, setCustomAddress, ownProfile } = useContext(NftContract);
-  const { setCreateNftPopup } = useContext(Globals);
+  const { setCreateNftPopup, openAddress } = useContext(Globals);
   const [searchInput, setSearchInput] = useState('');
 
   const router = useRouter();
@@ -18,9 +18,9 @@ export default function Header() {
         Your Profile
       </button>
     );
-  } else if (!userHasProfile && !ownProfile) {
+  } else if (!userHasProfile) {
     profileButton = (
-      <button className="text-slate-700 rounded-3xl bg-white" onClick={() => setCustomAddress('')}>
+      <button className="text-slate-700 rounded-3xl bg-white" onClick={() => router.push(`/create-profile`)}>
         Create Profile
       </button>
     );
@@ -46,7 +46,8 @@ export default function Header() {
           onClick={() => {
             const search = searchInput;
             setSearchInput('');
-            router.push(`/portfolio/${search}`);
+            openAddress(search);
+            // router.push(`/portfolio/${search}`);
           }}
         >
           Search

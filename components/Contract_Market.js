@@ -12,8 +12,9 @@ export const MarketContract = createContext();
 
 export const Contract_Market = ({ children }) => {
   const { chainId, contract, contract_Market, contract_Weth, signer, signerAddress } = useContext(NftContract);
-  const { setIsLoading, setIsLoadingText } = useContext(Globals);
-  const { setOfferData, setSaleData, testInteraction, getOfferData } = useContext(FirebaseBackend);
+  const { setIsLoading, setIsLoadingText, setDeleteOffer } = useContext(Globals);
+  const { setOfferData, setSaleData, testInteraction, getOfferData, getSaleData, deleteOfferData, transactionEvent } =
+    useContext(FirebaseBackend);
   // State Variables
 
   // Functions
@@ -22,27 +23,75 @@ export const Contract_Market = ({ children }) => {
     return nonce;
   };
 
-  const getTimestamp = (hours) => {
+  const getTimestamp = (seconds) => {
     const now = Math.floor(Date.now() / 1000); // Convert to seconds
-    const additionalTime = 60 * 60 * hours; // Number of seconds in a day
+    const additionalTime = seconds; // Number of seconds in a day
     const timestamp = now + additionalTime;
     return timestamp;
   };
 
-  const purchaseNft = async (tokenId, tokenOwner) => {
-    const saleId = tokenId + '-' + tokenOwner;
-    const docRef = db.collection('sale').doc(saleId);
-    docRef.get().then((doc) => {
-      if (doc.exists) {
-        console.log('Document data:', doc.data());
+  const buyNft = async (metadata) => {
+    try {
+      setIsLoadingText('Validate sale');
+      setIsLoading(true);
+
+      const sale = await getSaleData(metadata);
+
+      const tokenId = ethers.BigNumber.from(sale.tokenId);
+      const sigOwner = sale.address;
+      const priceAsText = sale.price.toString();
+      const price = ethers.utils.parseEther(priceAsText);
+      const typeOf = 'sale';
+      const nonce = ethers.BigNumber.from(sale.nonce);
+      const time = ethers.BigNumber.from(sale.timestamp);
+      const signature = sale.signature;
+
+      // Front End Validation
+      const validation = await verifyMessage(tokenId, sigOwner, priceAsText, typeOf, nonce, time, signature);
+      // Check timestamp
+      const timeLeft = sale.timestamp - Math.floor(Date.now() / 1000);
+      const expired = timeLeft < 0;
+
+      console.log('Validate sale data');
+
+      if (validation && !expired) {
+        // Make Sale
+        console.log('Sale data successfully validated!');
+
+        // Allowance
+        await approveTokens(priceAsText);
+
+        // Transaction
+        setIsLoadingText('Sale Transaction');
+        // Create Message
+        const message = {
+          tokenId: tokenId,
+          user: sigOwner,
+          nonce: nonce,
+          price: price,
+          typeOf: typeOf,
+          timestamp: time,
+        };
+        const tx = await contract_Market.BuyNft(message, signature);
+        setIsLoadingText('Waiting for confirmation');
+        const receipt = await tx.wait();
+        // This is for testing only - Should be done on server
+        await transactionEvent(tokenId, sigOwner, signerAddress, priceAsText, chainId);
       } else {
-        console.log('No such document!');
+        // Fail
+        throw new Error('Validation failed or offer expired');
       }
-    });
+
+      setIsLoadingText('Successfully Sold NFT!');
+    } catch (error) {
+      setIsLoadingText('Failed to buy NFT!');
+    }
+
+    setTimeout(() => setIsLoading(false), 2000);
   };
   const sellNft = async (metadata) => {
     try {
-      setIsLoadingText('Sign your offer');
+      setIsLoadingText('Validate offer');
       setIsLoading(true);
 
       const offers = await getOfferData(metadata);
@@ -61,7 +110,7 @@ export const Contract_Market = ({ children }) => {
       // Front End Validation
       const validation = await verifyMessage(tokenId, sigOwner, priceAsText, typeOf, nonce, time, signature);
       // Check timestamp
-      const timeLeft = expiryTimestamp - Math.floor(Date.now() / 1000);
+      const timeLeft = acceptedOffer.timestamp - Math.floor(Date.now() / 1000);
       const expired = timeLeft < 0;
 
       console.log('Validate offer data');
@@ -69,8 +118,26 @@ export const Contract_Market = ({ children }) => {
       if (validation && !expired) {
         // Make Sale
         console.log('Offer data successfully validated!');
-        const tx = await contract_Market.SellNft(tokenId, sigOwner, price, nonce, time, signature);
+
+        // Allowance
+        await approveNFT(tokenId);
+
+        // Transaction
+        setIsLoadingText('Sale Transaction');
+        // Create Message
+        const message = {
+          tokenId: tokenId,
+          user: sigOwner,
+          nonce: nonce,
+          price: price,
+          typeOf: typeOf,
+          timestamp: time,
+        };
+        const tx = await contract_Market.SellNft(message, signature);
+        setIsLoadingText('Waiting for confirmation');
         const receipt = await tx.wait();
+        // This is for testing only - Should be done on server
+        await transactionEvent(tokenId, signerAddress, sigOwner, priceAsText, chainId);
       } else {
         // Fail
         throw new Error('Validation failed or offer expired');
@@ -78,7 +145,8 @@ export const Contract_Market = ({ children }) => {
 
       setIsLoadingText('Successfully Purchased NFT!');
     } catch (error) {
-      setIsLoadingText('Failed to set price!');
+      setIsLoadingText('Failed to sell NFT!');
+      setDeleteOffer(true);
     }
 
     setTimeout(() => setIsLoading(false), 2000);
@@ -89,23 +157,25 @@ export const Contract_Market = ({ children }) => {
     console.log('Firebsae Cloud function should have been called!');
   };
 
-  const setSale = async (metadata, price) => {
+  const setSale = async (metadata, price, duration) => {
     try {
       setIsLoadingText('Sign your offer');
       setIsLoading(true);
 
       // Get Expiration Time
-      const expirationTime = getTimestamp(24);
+      const expirationTime = getTimestamp(duration);
       // Get Nonce of user
       const nonce = await getNonce();
 
       const signature = await signMessage(metadata.tokenId, price.toString(), 'sale', expirationTime, nonce);
+
       // Approve NFT
+      setIsLoadingText('Approve NFT');
       await approveNFT(metadata.tokenId);
 
       // this should normaly be done on the server!
       // Or at least some confirmation of the sale by a server that reacts to the approve event
-      await setSaleData(metadata.tokenId, signerAddress, price, expirationTime, signature, nonce);
+      await setSaleData(metadata.tokenId, signerAddress, price, expirationTime, signature, nonce, chainId);
 
       setIsLoadingText('Successfully updated NFT price!');
     } catch (e) {
@@ -115,30 +185,48 @@ export const Contract_Market = ({ children }) => {
     setTimeout(() => setIsLoading(false), 2000);
   };
 
-  const setOffer = async function (metadata, price) {
+  const setOffer = async function (metadata, price, duration) {
     try {
-      setIsLoadingText('Sign your offer');
       setIsLoading(true);
+      setIsLoadingText('Check if offer available');
 
-      // Set Expiration Time
-      const expirationTime = getTimestamp(24);
-      // Get Nonce of user
-      const nonce = await getNonce();
+      const tokensAvailable = await checkTokensAvailable(price.toString());
+      if (!tokensAvailable) {
+        console.log('Not enough tokens available in your account');
+        setIsLoadingText('Not enough tokens available in your account');
+      } else {
+        setIsLoadingText('Sign your offer');
 
-      const signature = await signMessage(metadata.tokenId, price.toString(), 'offer', expirationTime, nonce);
-      // Approve Tokens
-      await approveTokens(price.toString());
+        // Set Expiration Time
+        const expirationTime = getTimestamp(duration);
+        // Get Nonce of user
+        const nonce = await getNonce();
 
-      // this should normaly be done on the server!
-      // Or at least some confirmation of the offer by a server that reacts to the approve event
-      await setOfferData(metadata.tokenId, signerAddress, price, expirationTime, signature, nonce);
+        const signature = await signMessage(metadata.tokenId, price.toString(), 'offer', expirationTime, nonce);
 
-      setIsLoadingText('Successfully updated offer!');
+        // Approve Tokens
+        setIsLoadingText('Approve Tokens');
+        await approveTokens(price.toString());
+
+        // this should normaly be done on the server!
+        // Or at least some confirmation of the offer by a server that reacts to the approve event
+        await setOfferData(metadata.tokenId, signerAddress, price, expirationTime, signature, nonce, chainId);
+
+        setIsLoadingText('Successfully updated offer!');
+      }
     } catch (e) {
-      setIsLoadingText('Failed to set price!');
+      setIsLoadingText('Failed to set offer!');
     }
 
     setTimeout(() => setIsLoading(false), 2000);
+  };
+
+  const deleteHighestOffer = async function (metadata) {
+    setIsLoading(true);
+    setIsLoadingText('delte offer...');
+    await deleteOfferData(metadata.tokenId, metadata.highestOffer.address);
+    setDeleteOffer(false);
+    setIsLoading(false);
   };
 
   // Approve Functions
@@ -147,25 +235,42 @@ export const Contract_Market = ({ children }) => {
     try {
       setIsLoadingText('Approve Tokens');
       const priceConverted = ethers.utils.parseEther(amount);
-      const tx = await contract_Weth.approve(contract_Market.address, priceConverted);
-      setIsLoadingText('Waiting for confirmation');
-      const receipt = tx.wait();
+      const approvedAmount = await contract_Weth.allowance(signerAddress, contract_Market.address);
+      const isAlreadyApproved = approvedAmount.gte(priceConverted);
+      if (!isAlreadyApproved) {
+        const tx = await contract_Weth.approve(contract_Market.address, priceConverted);
+        setIsLoadingText('Waiting for confirmation');
+        const receipt = await tx.wait();
+      }
       console.log('Tokens successfully approved!');
     } catch (error) {
       console.log('Error approving tokens: ', error);
+      throw new Error('Token Approval failed!');
     }
   };
 
   const approveNFT = async (tokenId) => {
     try {
       setIsLoadingText('Approve NFT');
-      const tx = await contract.approve(contract_Market.address, tokenId);
-      setIsLoadingText('Waiting for confirmation');
-      const receipt = tx.wait();
+      const approvedAddress = await contract.getApproved(tokenId);
+      const isAlreadyApproved = approvedAddress == contract_Market.address;
+      if (!isAlreadyApproved) {
+        const tx = await contract.approve(contract_Market.address, tokenId);
+        setIsLoadingText('Waiting for confirmation');
+        const receipt = await tx.wait();
+      }
       console.log('NFT successfully approved!');
     } catch (error) {
       console.log('Error approving NFT: ', error);
+      throw new Error('NFT Approval failed!');
     }
+  };
+
+  const checkTokensAvailable = async (amountText) => {
+    const amount = ethers.utils.parseEther(amountText);
+    const available = await contract_Weth.balanceOf(signerAddress);
+    console.log('Available tokens: ', available.toString());
+    return available.gte(amount);
   };
 
   // Front End Functions
@@ -216,16 +321,27 @@ export const Contract_Market = ({ children }) => {
   const verifyMessage = async function (tokenId, sigOwner, priceAsText, typeOf, nonce, time, signature) {
     const priceInWei = ethers.utils.parseEther(priceAsText);
 
-    console.log('Verify Message:');
-    console.log('Verify with variables: ', tokenId, sigOwner, priceAsText, typeOf, nonce, time, signature);
+    console.log('Verify Message');
+    // console.log('Verify with variables: ', tokenId, sigOwner, priceAsText, typeOf, nonce, time, signature);
 
-    const result = await contract_Market.getSigner(tokenId, sigOwner, nonce, priceInWei, typeOf, time, signature);
+    const message = {
+      tokenId: tokenId,
+      user: sigOwner,
+      nonce: nonce,
+      price: priceInWei,
+      typeOf: typeOf,
+      timestamp: time,
+    };
+
+    const result = await contract_Market.getSigner(message, signature);
     console.log(`Verify finished! ${sigOwner} should be ${result}, which is: ${sigOwner == result}`);
     return sigOwner == result;
   };
 
   return (
-    <MarketContract.Provider value={{ contract_Market, signerAddress, purchaseNft, sellNft, setSale, setOffer }}>
+    <MarketContract.Provider
+      value={{ contract_Market, signerAddress, buyNft, sellNft, setSale, setOffer, deleteHighestOffer }}
+    >
       {children}
     </MarketContract.Provider>
   );

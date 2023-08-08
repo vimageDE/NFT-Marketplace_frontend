@@ -57,7 +57,7 @@ export const NFT = ({ index, metadata, ownedSection }) => {
         )}
         {metadata.offers ? (
           <button className="" onClick={() => changeLightbox(true)}>
-            Max offer: {metadata.highestOffer.price} eth
+            Max offer: {metadata.highestOffer ? metadata.highestOffer.price : '-'} eth
           </button>
         ) : (
           <button className="" onClick={() => changeLightbox(true)}>
@@ -126,54 +126,72 @@ export const NFT = ({ index, metadata, ownedSection }) => {
 
   return (
     <div>
-      <div
-        className="overflow-hidden relative rounded-lg w-72 flex flex-col justify-center bg-slate-100 shadow-lg cursor-pointer"
-        onClick={() => changeLightbox(true)}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-      >
+      {ownedSection ? (
         <div
-          className="bg-cover h-72 w-72 bg-center rounded-t-lg transition-transform duration-500"
-          style={{
-            backgroundImage: `url(${getImageUrl(metadata)})`,
-            transform: hover ? 'scale(1.05)' : 'scale(1)',
-          }}
-        ></div>
-        <div className="bg-white space-y-1 px-4 text-sm relative py-4 border-[1px] border-slate-300 rounded-b-lg">
-          <div>{metadata.name}</div>
-          <div className="font-bold">{metadata.sale.price + ' ETH'}</div>
-          <div>Best offer: {metadata.highestOffer.price} ETH</div>
-          <div className="absolute px-2 rounded text-center bottom-4 right-4 bg-slate-200 border-[1px] border-slate-400">
-            {'#' + metadata.tokenId}
-          </div>
-        </div>
-        <div
-          className="absolute w-full bottom-0 transform translate-y-full transition-transform duration-150"
-          style={{
-            transform: hover ? 'translateY(0)' : 'translateY(100%)',
-          }}
+          className="overflow-hidden relative mb-8 rounded-lg w-72 flex flex-col justify-center bg-slate-100 shadow-lg cursor-pointer"
+          onClick={() => changeLightbox(true)}
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
         >
-          {ownProfile ? (
-            metadata.sale.price == 0 ? (
+          <div
+            className="bg-cover h-72 w-72 bg-center rounded-t-lg transition-transform duration-500"
+            style={{
+              backgroundImage: `url(${getImageUrl(metadata)})`,
+              transform: hover ? 'scale(1.05)' : 'scale(1)',
+            }}
+          ></div>
+          <div className="bg-white space-y-1 px-4 text-sm relative py-4 border-[1px] border-slate-300 rounded-b-lg">
+            <div>{metadata.name}</div>
+            <div className="font-bold">{metadata.sale.price + ' ETH'}</div>
+            <div>Best offer: {metadata.highestOffer ? metadata.highestOffer.price : '-'} ETH</div>
+            <div className="absolute px-2 rounded text-center bottom-4 right-4 bg-slate-200 border-[1px] border-slate-400">
+              {'#' + metadata.tokenId}
+            </div>
+          </div>
+          <div
+            className="absolute w-full bottom-0 transform translate-y-full transition-transform duration-150"
+            style={{
+              transform: hover ? 'translateY(0)' : 'translateY(100%)',
+            }}
+          >
+            {ownProfile ? (
+              metadata.sale.price == 0 ? (
+                <button className="rounded-none w-full" onClick={() => changeLightbox(true)}>
+                  Set Price
+                </button>
+              ) : (
+                <button className="rounded-none w-full" onClick={() => changeLightbox(true)}>
+                  Update Price
+                </button>
+              )
+            ) : metadata.sale.price == 0 ? (
               <button className="rounded-none w-full" onClick={() => changeLightbox(true)}>
-                Set Price
+                Make Offer
               </button>
             ) : (
               <button className="rounded-none w-full" onClick={() => changeLightbox(true)}>
-                Update Price
+                Buy: {metadata.sale.price} eth
               </button>
-            )
-          ) : metadata.sale.price == 0 ? (
-            <button className="rounded-none w-full" onClick={() => changeLightbox(true)}>
-              Make Offer
-            </button>
-          ) : (
-            <button className="rounded-none w-full" onClick={() => changeLightbox(true)}>
-              Buy: {metadata.sale.price} eth
-            </button>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div
+          className="overflow-hidden mb-8 relative rounded-lg w-72 flex flex-col justify-center bg-slate-100 shadow-lg cursor-pointer"
+          onClick={() => changeLightbox(true)}
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+        >
+          <div
+            className="bg-cover h-72 w-72 bg-center rounded-t-lg transition-transform duration-500"
+            style={{
+              backgroundImage: `url(${getImageUrl(metadata)})`,
+              transform: hover ? 'scale(1.05)' : 'scale(1)',
+            }}
+          ></div>
+        </div>
+      )}
+
       {/*buttonsBelow*/}
       <Modal
         isOpen={lightbox}

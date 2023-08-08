@@ -8,6 +8,7 @@ import { ImCross } from 'react-icons/Im';
 import { NftContract } from './Contract_NFT';
 import { NFT } from './Component_NFT';
 import { Globals } from './GlobalVariables';
+import { useRouter } from 'next/router';
 
 export default function UserProfile() {
   // Global Variables
@@ -25,7 +26,9 @@ export default function UserProfile() {
   const { setCreateNftPopup } = useContext(Globals);
   // State Variables
   const [profileHeader, setProfileHeader] = useState('/profile-hero_PLACEHOLDER.png');
-  const [selectedTab, setSelectedTab] = useState('created');
+  const [selectedTab, setSelectedTab] = useState('owned');
+
+  const router = useRouter();
 
   useEffect(() => {
     if (metadataCollection.length > 0) {
@@ -49,9 +52,18 @@ export default function UserProfile() {
             >
               <h2 className="font-blog text-artistName font-black text-center">{seriesName}</h2>
               {ownProfile ? (
-                <div className="absolute bottom-4 rounded-full py-2 px-4 font-black text-center text-slate-700 bg-white bg-opacity-60 uppercase">
-                  This is your profile
-                </div>
+                <>
+                  {seriesName ? (
+                    <></>
+                  ) : (
+                    <button onClick={() => router.push('/create-profile')} className="absolute bottom-16 bg-opacity-60">
+                      Set Name
+                    </button>
+                  )}
+                  <div className="absolute bottom-4 rounded-full py-2 px-4 font-black text-center text-slate-700 bg-white bg-opacity-60 uppercase">
+                    This is your profile
+                  </div>
+                </>
               ) : (
                 <></>
               )}
@@ -63,20 +75,20 @@ export default function UserProfile() {
           <div className="bg-slate-700">
             <div className="flex justify-center space-x-8">
               <button
-                onClick={() => setSelectedTab('created')}
-                className={`py-4 px-6 block hover:bg-gray-400 focus:outline-none rounded-none ${
-                  selectedTab === 'created' ? 'border-b-4 border-gray-200 ' : ''
-                }`}
-              >
-                Created
-              </button>
-              <button
                 onClick={() => setSelectedTab('owned')}
                 className={`py-4 px-6 block hover:bg-gray-400 focus:outline-none rounded-none ${
                   selectedTab === 'owned' ? 'border-b-4 border-gray-200 ' : ''
                 }`}
               >
-                Owned
+                Owned ({metadataCollectionOwned.length})
+              </button>
+              <button
+                onClick={() => setSelectedTab('created')}
+                className={`py-4 px-6 block hover:bg-gray-400 focus:outline-none rounded-none ${
+                  selectedTab === 'created' ? 'border-b-4 border-gray-200 ' : ''
+                }`}
+              >
+                Created ({metadataCollection.length})
               </button>
             </div>
           </div>
@@ -87,9 +99,9 @@ export default function UserProfile() {
             <div className="flex flex-col items-center my-8">
               <div className="text-center text-slate-700">{`NFT portfolio created by:`}</div>
               <div className="text-center font-black text-slate-700">{signerAddress}</div>
-              <div className="flex items-center justify-center space-x-8 my-8">
+              <div className="flex flex-wrap items-center justify-center space-x-8 px-20 my-8">
                 {metadataCollection.map((data, index) => (
-                  <NFT key={data.id} index={index} metadata={data} />
+                  <NFT key={data.id} index={index} metadata={data} className="" />
                 ))}
               </div>
             </div>
@@ -103,7 +115,7 @@ export default function UserProfile() {
             <div className="flex flex-col items-center my-8">
               <div className="text-center text-slate-700">{`NFT currently owned by:`}</div>
               <div className="text-center font-black text-slate-700">{signerAddress}</div>
-              <div className="flex items-center justify-center space-x-8 my-8">
+              <div className="flex flex-wrap items-center justify-center space-x-8 px-20 my-8">
                 {metadataCollectionOwned.map((data, index) => (
                   <NFT key={data.id} index={index} metadata={data} ownedSection={true} />
                 ))}

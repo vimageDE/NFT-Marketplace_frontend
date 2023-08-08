@@ -2,13 +2,18 @@ import { useEffect, useState } from 'react';
 
 function Countdown({ expiryTimestamp }) {
   const calculateTimeLeft = () => {
-    let diff = expiryTimestamp - Math.floor(Date.now() / 1000);
+    let diffOrig = expiryTimestamp - Math.floor(Date.now() / 1000);
+    let diff = diffOrig;
+
+    let days = Math.floor(diff / 86400); // Calculate days
+    diff -= days * 86400; // Subtract days from diff
 
     return {
+      days: days,
       hours: Math.floor(diff / 3600),
       minutes: Math.floor((diff % 3600) / 60),
       seconds: Math.floor((diff % 3600) % 60),
-      expired: diff < 0,
+      expired: diffOrig < 0,
     };
   };
 
@@ -24,7 +29,7 @@ function Countdown({ expiryTimestamp }) {
 
   return !timeLeft.expired ? (
     <div>
-      {timeLeft.hours}h, {timeLeft.minutes}m, {timeLeft.seconds}s
+      {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
     </div>
   ) : (
     <div>Expired</div>

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 export const Globals = createContext();
 
@@ -8,6 +9,9 @@ export const GlobalVariables = ({ children }) => {
   const [isLoadingText, setIsLoadingText] = useState('');
   const [createNftPopup, setCreateNftPopup] = useState(false);
   const [profileName, setProfileName] = useState('');
+  const [deleteOffer, setDeleteOffer] = useState(false);
+
+  const router = useRouter();
 
   const getAddressShortened = (address, digits = 6) => {
     // Check if the address is valid
@@ -30,6 +34,20 @@ export const GlobalVariables = ({ children }) => {
     return link;
   };
 
+  const getTimestampDate = (timestamp) => {
+    const date = new Date(timestamp * 1000);
+
+    // Format it in a readable manner
+    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+      date.getDate()
+    ).padStart(2, '0')}`;
+    return formattedDate;
+  };
+
+  const openAddress = (address) => {
+    router.push(`/portfolio/${address}`);
+  };
+
   return (
     <Globals.Provider
       value={{
@@ -39,10 +57,14 @@ export const GlobalVariables = ({ children }) => {
         setIsLoadingText,
         createNftPopup,
         setCreateNftPopup,
+        deleteOffer,
+        setDeleteOffer,
         profileName,
         setProfileName,
         getAddressShortened,
         getAddressLink,
+        getTimestampDate,
+        openAddress,
       }}
     >
       {children}

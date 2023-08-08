@@ -5,6 +5,7 @@ import { NFTStorage, File } from 'nft.storage';
 import { NftContract } from './Contract_NFT';
 import { Button, Checkbox } from 'web3uikit';
 import { Globals } from './GlobalVariables';
+import { FirebaseBackend } from './Backend_Firebase';
 
 const client = new NFTStorage({
   token:
@@ -12,8 +13,19 @@ const client = new NFTStorage({
 });
 
 export const CreateNft = () => {
-  const { setIsLoading, setIsLoadingText, createNftPopup, setCreateNftPopup, profileName } = useContext(Globals);
-  const { signerAddress, createArtwork, setSeries, hasProfile, fetchMetadata, getImageUrl } = useContext(NftContract);
+  const { setIsLoading, setIsLoadingText, createNftPopup, setCreateNftPopup, profileName, openAddress } =
+    useContext(Globals);
+  const {
+    signerAddress,
+    createArtwork,
+    setSeries,
+    hasProfile,
+    userHasProfile,
+    ownProfile,
+    fetchMetadata,
+    getImageUrl,
+  } = useContext(NftContract);
+  const { getImageByUrl } = useContext(FirebaseBackend);
   // NFT Data
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -98,21 +110,30 @@ export const CreateNft = () => {
       setNftUrl(url);
       const metadata = await fetchMetadata(url);
       const imageUrl = getImageUrl(metadata);
-      setNftImageUrl(imageUrl);
+      const isExisiting = await getImageByUrl(metadata.image);
+      if (isExisiting) {
+        setNftUrl('');
+        setIsLoadingText('Image was already uploaded as NFT!');
+        console.log('Image was already uploaded as NFT!');
+        setTimeout(() => setIsLoading(false), 2000);
+      } else {
+        setNftImageUrl(imageUrl);
 
-      setIsLoadingText('Waiting for Transaction');
+        setIsLoadingText('Waiting for Transaction');
 
-      if (!hasProfile && profileName) {
-        setIsLoadingText('Creating Portfolio Transaction');
-        await setSeries(profileName);
+        if (!userHasProfile && ownProfile && profileName) {
+          setIsLoadingText('Creating Portfolio Transaction');
+          await setSeries(profileName);
+        }
+        setIsLoadingText('Creating NFT Transaction');
+        await createArtwork(url);
+
+        setCreateNftPopup(false);
+        setIsLoading(false);
+        openAddress(signerAddress);
       }
-      setIsLoadingText('Creating NFT Transaction');
-      await createArtwork(url);
-
-      setIsLoading(false);
-      setCreateNftPopup(false);
     } catch (e) {
-      setIsLoading('Error creating NFT');
+      setIsLoadingText('Error creating NFT');
       setTimeout(() => setIsLoading(false), 2000);
     }
   };
@@ -126,6 +147,21 @@ export const CreateNft = () => {
     return metadata.url;
   };
 
+  const skipNft = async () => {
+    try {
+      setIsLoadingText('Create Profile');
+      setIsLoading(true);
+      await setSeries(profileName);
+
+      setCreateNftPopup(false);
+      setIsLoading(false);
+      openAddress(signerAddress);
+    } catch (e) {
+      setIsLoading('Error creating Profile');
+      setTimeout(() => setIsLoading(false), 2000);
+    }
+  };
+
   return (
     <>
       <Modal
@@ -137,12 +173,12 @@ export const CreateNft = () => {
         className="m-auto bg-slate-700 w-1/2 rounded-xl shadow max-h-[800px] max-w-[500px]"
         overlayClassName="fixed inset-0 bg-black bg-opacity-75 flex"
       >
-        <div className="text-white text-center">
+        <div className="text-white text-center relative">
           <div className="bg-gold rounded h-28">
             <h2 className="text-6xl pt-8">Create an NFT</h2>
           </div>
           <div className="">
-            <div className="my-16 flex flex-col items-center">
+            <div className="my-12 flex flex-col items-center">
               <label htmlFor="file-upload">
                 <img
                   src={selectedImage ? selectedImage : '/createNFT_PLACEHOLDER.jpg'}
@@ -160,6 +196,15 @@ export const CreateNft = () => {
                   </label>
 
                   <div>supported files: .png .jpg</div>
+                  {hasProfile && !userHasProfile && ownProfile && profileName ? (
+                    <div>
+                      <button className="bg-slate-500 hover:bg-gold text-slate-700 mt-8" onClick={() => skipNft()}>
+                        SKIP
+                      </button>
+                    </div>
+                  ) : (
+                    <></>
+                  )}
                 </>
               ) : (
                 <>

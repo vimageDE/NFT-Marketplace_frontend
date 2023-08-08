@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Header from '../../components/Component_Header';
@@ -13,19 +13,29 @@ import { BiPurchaseTag, BiCart, BiSolidCoinStack } from 'react-icons/bi';
 import { RiContractRightLine } from 'react-icons/ri';
 import { GiCancel } from 'react-icons/gi';
 import Modal from 'react-modal';
+import { CreateNft } from '../../components/Component_CreateNft';
 
 function TokenPage() {
   // Imported Variables
-  const { setIsLoading, setIsLoadingText, getAddressShortened, getAddressLink } = useContext(Globals);
+  const {
+    setIsLoading,
+    setIsLoadingText,
+    getAddressShortened,
+    getAddressLink,
+    getTimestampDate,
+    setDeleteOffer,
+    deleteOffer,
+  } = useContext(Globals);
   const { nftMetadata, getNftMetadata, setNftMetadata, getImageUrl, getSeries, signerAddress } =
     useContext(NftContract);
-  const { setOffer, setSale, sellNft } = useContext(MarketContract);
+  const { setOffer, setSale, sellNft, buyNft, deleteHighestOffer } = useContext(MarketContract);
 
   // state variables
   const [ownerName, setOwnerName] = useState('');
   const [makeOffer, setMakeOffer] = useState(false);
   const [updatePrice, setUpdatePrice] = useState(false);
   const [inputSell, setInputSell] = useState(0.1);
+  const [inputDuration, setInputDuration] = useState(2592000);
   // Constants
   const router = useRouter();
   const { tokenId } = router.query;
@@ -62,7 +72,9 @@ function TokenPage() {
     }
   };
 
-  loadToken();
+  useEffect(() => {
+    loadToken();
+  }, []);
 
   // Now you can use tokenId to fetch data for the specific token
 
@@ -105,12 +117,12 @@ function TokenPage() {
                 <div className="flex space-x-2">
                   <div>OWNED BY</div>
                   <Link href={`/portfolio/${nftMetadata.owner}`}>
-                    <a className="text-gold">{ownerName}</a>
+                    <a className="text-gold">{ownerName ? ownerName : getAddressShortened(nftMetadata.owner)}</a>
                   </Link>
                 </div>
 
                 <div className="  min-w-[250px] mt-8 border-2 rounded-xl bg-slate-50">
-                  {nftMetadata.sale.price !== 0 ? (
+                  {nftMetadata.sale && nftMetadata.sale.price !== 0 ? (
                     <div className="flex border-b-2 pl-8 py-2 space-x-2">
                       <FaRegClock className="my-auto" />
                       <div className="flex space">
@@ -132,19 +144,33 @@ function TokenPage() {
                       <div>
                         <div className="text-xs">Current Price</div>
                         <div className="text-xl font-bold text-slate-600">
-                          {nftMetadata.sale.price !== 0 ? nftMetadata.sale.price : '-'} ETH
+                          {nftMetadata.sale && nftMetadata.sale.price !== 0 ? nftMetadata.sale.price : '-'} ETH
                         </div>
                       </div>
                       <div>
                         <div className="text-xs">Highest Offer</div>
                         <div className="text-xl font-bold text-slate-400">
-                          {nftMetadata.highestOffer.price != 0 ? nftMetadata.highestOffer.price : '-'} ETH
+                          {nftMetadata.highestOffer && nftMetadata.highestOffer.price !== 0
+                            ? nftMetadata.highestOffer.price
+                            : '-'}{' '}
+                          ETH
                         </div>
                       </div>
                     </div>
                     {nftMetadata.owner != signerAddress ? (
                       <div className="flex space-x-4 pt-4">
-                        <button className="w-full flex justify-center">
+                        <button
+                          className="w-full flex justify-center"
+                          onClick={() => {
+                            if (nftMetadata.sale && nftMetadata.sale.price > 0) {
+                              buyNft(nftMetadata);
+                            } else {
+                              setIsLoadingText('Not for sale - make an offer instead');
+                              setIsLoading(true);
+                              setTimeout(() => setIsLoading(false), 2000);
+                            }
+                          }}
+                        >
                           <BiCart className="my-auto mr-1" />
                           Buy Now
                         </button>
@@ -162,7 +188,7 @@ function TokenPage() {
                           <BiCart className="my-auto mr-1" />
                           Update Price
                         </button>
-                        {nftMetadata.highestOffer.price === 0 ? (
+                        {!nftMetadata.highestOffer || nftMetadata.highestOffer.price === 0 ? (
                           <button className="w-full bg-slate-300 hover:bg-slate-300 flex justify-center">
                             <BiPurchaseTag className="my-auto mr-1" />
                             No Offer
@@ -194,13 +220,13 @@ function TokenPage() {
                   <div>Timestamp</div>
                 </div>
                 <div className="space-y-2">
-                  {nftMetadata.offers.map((offer, index) => (
+                  {nftMetadata.transactions.map((transaction, index) => (
                     <div key={index} className="grid grid-cols-3">
                       <div className="flex items-center">
-                        <BiSolidCoinStack className="my-auto mr-2" /> {offer.price} ETH
+                        <BiSolidCoinStack className="my-auto mr-2" /> {transaction.price} ETH
                       </div>
-                      <div>{getAddressLink(offer.address, getAddressShortened(offer.address))}</div>
-                      <div>Zeitpunkt</div>
+                      <div>{getAddressLink(transaction.to, getAddressShortened(transaction.to))}</div>
+                      <div>{getTimestampDate(transaction.timestamp)}</div>
                     </div>
                   ))}
                   <div className="grid grid-cols-3">
@@ -209,7 +235,7 @@ function TokenPage() {
                       CREATED
                     </div>
                     <div>{getAddressLink(nftMetadata.creator, getAddressShortened(nftMetadata.creator))}</div>
-                    <div>Zeitpunkt</div>
+                    <div>{nftMetadata.info ? getTimestampDate(nftMetadata.info.timestamp) : '---'}</div>
                   </div>
                 </div>
               </div>
@@ -269,7 +295,9 @@ function TokenPage() {
                   <div className="border-2 w-fit mx-auto p-4 rounded-xl">
                     <div className="text-xs">current max offer:</div>
                     <div className="text-xl font-bold">
-                      {nftMetadata.highestOffer.price !== 0 ? nftMetadata.highestOffer.price + ' ETH' : '-'}
+                      {nftMetadata.highestOffer && nftMetadata.highestOffer.price !== 0
+                        ? nftMetadata.highestOffer.price + ' ETH'
+                        : '-'}
                     </div>
                   </div>
                   <div>
@@ -295,7 +323,23 @@ function TokenPage() {
                     </button>
                   </div>
                   <div>
-                    <button className="bg-gold hover:bg-slate-400" onClick={() => setOffer(nftMetadata, inputSell)}>
+                    <select
+                      className="text-black rounded-full w-32 h-8 text-center mb-4"
+                      value={inputDuration}
+                      onChange={(event) => setInputDuration(Number(event.target.value))}
+                    >
+                      <option value="86400">1 day</option>
+                      <option value="604800">7 days</option>
+                      <option value="1209600">14 days</option>
+                      <option value="2592000">30 days</option>
+                      <option value="31536000">1 year</option>
+                    </select>
+                  </div>
+                  <div>
+                    <button
+                      className="bg-gold hover:bg-slate-400"
+                      onClick={() => setOffer(nftMetadata, inputSell, inputDuration)}
+                    >
                       Make Offer
                     </button>
                   </div>
@@ -323,7 +367,7 @@ function TokenPage() {
                   <div className="border-2 w-fit mx-auto p-4 rounded-xl">
                     <div className="text-xs">current price:</div>
                     <div className="text-xl font-bold">
-                      {nftMetadata.sale.price !== 0 ? nftMetadata.sale.price + ' ETH' : '-'}
+                      {nftMetadata.sale && nftMetadata.sale.price !== 0 ? nftMetadata.sale.price + ' ETH' : '-'}
                     </div>
                   </div>
                   <div>
@@ -349,11 +393,54 @@ function TokenPage() {
                     </button>
                   </div>
                   <div>
-                    <button className="bg-gold hover:bg-slate-400" onClick={() => setSale(nftMetadata, inputSell)}>
+                    <select
+                      className="text-black rounded-full w-32 h-8 text-center mb-4"
+                      value={inputDuration}
+                      onChange={(event) => setInputDuration(Number(event.target.value))}
+                    >
+                      <option value="86400">1 day</option>
+                      <option value="604800">7 days</option>
+                      <option value="1209600">14 days</option>
+                      <option value="2592000">30 days</option>
+                      <option value="31536000">1 year</option>
+                    </select>
+                  </div>
+                  <div>
+                    <button
+                      className="bg-gold hover:bg-slate-400"
+                      onClick={() => setSale(nftMetadata, inputSell, inputDuration)}
+                    >
                       Update Price
                     </button>
                   </div>
                 </div>
+              </div>
+            </Modal>
+            <Modal
+              isOpen={deleteOffer}
+              onRequestClose={() => {
+                setDeleteOffer(false);
+              }}
+              contentLabel="Delete Offer"
+              className="m-auto bg-slate-700 w-1/2 rounded-xl shadow max-h-[800px] max-w-[600px]"
+              overlayClassName="fixed inset-0 bg-black bg-opacity-75 flex"
+            >
+              <div className="text-center text-white p-8">
+                <div className="">It appears you have encountered an issue while selling.</div>
+                <h2 className="text-4xl">Was there something wrong with the offer?</h2>
+                <div className="text-sm">
+                  It could be expired or the user does not have the approved tokens anymore... If so, you might want to
+                  delete the offer, so you can access the next best offer.
+                </div>
+                <div className="space-x-4 mt-8">
+                  <button className="bg-red-700 w-40" onClick={() => deleteHighestOffer(nftMetadata)}>
+                    Delete offer
+                  </button>
+                  <button className="bg-slate-400 w-40" onClick={() => setDeleteOffer(false)}>
+                    Do NOT delete
+                  </button>
+                </div>
+                <div className="text-sm uppercase">Deleted offers can't be accessed anymore!</div>
               </div>
             </Modal>
           </div>
@@ -363,6 +450,7 @@ function TokenPage() {
       ) : (
         <></> //<h2 className="text-center mt-32 text-slate-700 text-4xl"> Loading NFT with ID: '{tokenId}'</h2>
       )}
+      <CreateNft className="" />
       <LoadingOverlay />
     </div>
   );
