@@ -29,11 +29,13 @@ export default function Browse() {
     const combined = { all: allMetadata, last: lastSaleMetadata, highest: highestSaleMetadata };
     setBrowse(combined);
 
-    const completeTransactions = [];
-    while (completeTransactions.length < 20) {
-      completeTransactions.push(...lastSaleMetadata);
+    if (b.lastSales.length > 0) {
+      const completeTransactions = [];
+      while (completeTransactions.length < 20) {
+        completeTransactions.push(...lastSaleMetadata);
+      }
+      setRecentTransactions(completeTransactions);
     }
-    setRecentTransactions(completeTransactions);
   };
 
   // Seemless animation
@@ -57,7 +59,7 @@ export default function Browse() {
       >
         <h2 className="font-blog text-9xl font-black text-center">Browse</h2>
       </div>
-      {browse && browse.all.length > 0 ? (
+      {browse && browse.all.length > 0 && browse.last ? (
         <div className="">
           <div>
             <div className=" w-full text-center overflow-hidden py-4">
@@ -83,7 +85,7 @@ export default function Browse() {
           </div>
         </div>
       ) : (
-        <div>Loading Data</div>
+        <div className="my-8"></div>
       )}
       {browse && browse.all.length > 0 ? (
         <div className="">

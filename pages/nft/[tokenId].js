@@ -14,6 +14,7 @@ import { RiContractRightLine } from 'react-icons/ri';
 import { GiCancel } from 'react-icons/gi';
 import Modal from 'react-modal';
 import { CreateNft } from '../../components/Component_CreateNft';
+import { LoadingSymbol } from '../../components/Component_LoadingSymbol';
 
 function TokenPage() {
   // Imported Variables
@@ -26,7 +27,7 @@ function TokenPage() {
     setDeleteOffer,
     deleteOffer,
   } = useContext(Globals);
-  const { nftMetadata, getNftMetadata, setNftMetadata, getImageUrl, getSeries, signerAddress } =
+  const { contract, nftMetadata, getNftMetadata, setNftMetadata, getImageUrl, getSeries, signerAddress } =
     useContext(NftContract);
   const { setOffer, setSale, sellNft, buyNft, deleteHighestOffer } = useContext(MarketContract);
 
@@ -74,7 +75,7 @@ function TokenPage() {
 
   useEffect(() => {
     loadToken();
-  }, []);
+  }, [contract]);
 
   // Now you can use tokenId to fetch data for the specific token
 
@@ -98,7 +99,7 @@ function TokenPage() {
               </div>
 
               <div className="w-4/6 relative">
-                {nftMetadata.owner === signerAddress ? (
+                {nftMetadata.owned ? (
                   <div className="absolute right-0 top-0 border-2 rounded-xl p-4">
                     <FaHome className="mx-auto" /> <div>This is your NFT</div>
                   </div>
@@ -157,7 +158,7 @@ function TokenPage() {
                         </div>
                       </div>
                     </div>
-                    {nftMetadata.owner != signerAddress ? (
+                    {!nftMetadata.owned ? (
                       <div className="flex space-x-4 pt-4">
                         <button
                           className="w-full flex justify-center"
@@ -448,7 +449,10 @@ function TokenPage() {
           <h2 className="text-center mt-32 text-slate-700 text-4xl">No Token with ID '{tokenId}' available</h2>
         )
       ) : (
-        <></> //<h2 className="text-center mt-32 text-slate-700 text-4xl"> Loading NFT with ID: '{tokenId}'</h2>
+        <div className="my-16 text-center flex flex-col items-center space-y-2">
+          <div>Loading Token...</div>
+          <LoadingSymbol color={'slate-400'} />
+        </div> //<h2 className="text-center mt-32 text-slate-700 text-4xl"> Loading NFT with ID: '{tokenId}'</h2>
       )}
       <CreateNft className="" />
       <LoadingOverlay />

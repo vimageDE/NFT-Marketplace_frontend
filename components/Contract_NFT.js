@@ -73,7 +73,7 @@ export const Contract_NFT = ({ children }) => {
         setNftTokenPrevious(nftMetadata.tokenId);
 
         // Subscribe
-        subscribeToToken(nftMetadata, setNftMetadata);
+        subscribeToToken(nftMetadata, updateNftMetadata);
         console.log('EVENT - Subscribed to Token: ', nftMetadata.tokenId);
       }
     } else {
@@ -85,7 +85,15 @@ export const Contract_NFT = ({ children }) => {
   useEffect(() => {
     const isOwnProfile = customAddress == signerAddress && window.location.pathname.includes('portfolio/'); // || !customAddress;
     setOwnProfile(isOwnProfile);
-  }, [pathname]);
+  }, [pathname, customAddress, signerAddress]);
+  // Update NFT
+  async function updateNftMetadata(metadata) {
+    if (!metadata) return;
+
+    let allData = nftMetadataAll;
+    allData[metadata.tokenId] = metadata;
+    setNftMetadataAll(allData);
+  }
   // Set Contract
   async function updateContract() {
     const p = new ethers.providers.Web3Provider(window.ethereum);
@@ -211,7 +219,7 @@ export const Contract_NFT = ({ children }) => {
     }
     const uri = await contract.tokenURI(tokenId);
     if (!uri) {
-      return { owner: 0 };
+      return null;
     }
     const creator = await contract.getCreator(tokenId);
     const owner = await contract.getOwner(tokenId);
@@ -241,18 +249,21 @@ export const Contract_NFT = ({ children }) => {
       transactions: transactions ? transactions : null,
       info: info,
     };
+
+    let allData = nftMetadataAll;
+    allData[tokenId] = metadata;
+    setNftMetadataAll(allData);
+
     return metadata;
   }
 
   async function getNftMetadataGroup(tokenIds) {
+    if (tokenIds.length == 0) return null;
     const dataPromises = tokenIds.map(async (tokenId) => {
       if (nftMetadataAll[tokenId]) {
         return nftMetadataAll[tokenId];
       } else {
         const metadata = await getNftMetadata(tokenId);
-        let allData = nftMetadataAll;
-        allData[tokenId] = metadata;
-        setNftMetadataAll(allData);
         return metadata;
       }
     });

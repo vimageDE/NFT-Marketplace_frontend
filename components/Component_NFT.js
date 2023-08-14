@@ -6,6 +6,7 @@ import Modal from 'react-modal';
 import { db } from '../firebase';
 import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/router';
+import { LoadingSymbol } from './Component_LoadingSymbol';
 
 export const NFT = ({ index, metadata, ownedSection }) => {
   const {
@@ -24,14 +25,15 @@ export const NFT = ({ index, metadata, ownedSection }) => {
   const { getSaleData, getOfferData } = useContext(FirebaseBackend);
 
   const [lightbox, setLightbox] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [inputSellPrice, setInputSellPrice] = useState('');
   const [hover, setHover] = useState(false);
-  // let owner = ownProfile && ownedSection ? signerAddress : customAddress;
   const router = useRouter();
 
   // Funcitons
   const changeLightbox = (open) => {
     if (open) {
+      setLoading(true);
       router.push(`/nft/${metadata.tokenId}`);
       // setNftMetadata(metadata);
     }
@@ -83,7 +85,7 @@ export const NFT = ({ index, metadata, ownedSection }) => {
       </button>
     );
   } */
-  if (metadata.owner == signerAddress) {
+  if (metadata.owned) {
     // User is Owner!
     lightboxBelow.push(
       <div className="flex items-center space-x-4">
@@ -139,7 +141,15 @@ export const NFT = ({ index, metadata, ownedSection }) => {
               backgroundImage: `url(${getImageUrl(metadata)})`,
               transform: hover ? 'scale(1.05)' : 'scale(1)',
             }}
-          ></div>
+          >
+            {loading ? (
+              <div className="h-full w-full bg-black bg-opacity-40 flex items-center justify-center">
+                <LoadingSymbol color={'white'} className={''} />
+              </div>
+            ) : (
+              <></>
+            )}
+          </div>
           <div className="bg-white space-y-1 px-4 text-sm relative py-4 border-[1px] border-slate-300 rounded-b-lg">
             <div>{metadata.name}</div>
             <div className="font-bold">{metadata.sale.price + ' ETH'}</div>
@@ -154,7 +164,7 @@ export const NFT = ({ index, metadata, ownedSection }) => {
               transform: hover ? 'translateY(0)' : 'translateY(100%)',
             }}
           >
-            {ownProfile ? (
+            {metadata.owned ? (
               metadata.sale.price == 0 ? (
                 <button className="rounded-none w-full" onClick={() => changeLightbox(true)}>
                   Set Price
@@ -188,7 +198,24 @@ export const NFT = ({ index, metadata, ownedSection }) => {
               backgroundImage: `url(${getImageUrl(metadata)})`,
               transform: hover ? 'scale(1.05)' : 'scale(1)',
             }}
-          ></div>
+          >
+            <div
+              className="absolute w-full bottom-0 transform translate-y-full transition-transform duration-150"
+              style={{
+                transform: hover ? 'translateY(0)' : 'translateY(100%)',
+              }}
+            >
+              <button
+                className="rounded-none w-full"
+                onClick={(event) => {
+                  event.stopPropagation(); // Prevent the event from bubbling up
+                  setTitle(index);
+                }}
+              >
+                Set profile image
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

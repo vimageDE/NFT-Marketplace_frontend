@@ -8,7 +8,7 @@ import { CreateNft } from '../../components/Component_CreateNft';
 import { LoadingOverlay } from '../../components/Component_Loading';
 
 export default function Portfolio() {
-  const { hasProfile, userHasProfile, setCustomAddress, ownProfile } = useContext(NftContract);
+  const { hasProfile, userHasProfile, setCustomAddress, signerAddres } = useContext(NftContract);
 
   const router = useRouter();
   const { address } = router.query;
