@@ -95,8 +95,8 @@ export const NftBrowse = ({ index, metadata }) => {
           // transform: hover ? 'scale(1.1)' : 'scale(1.0)',
         }}
       ></div>
-      <div className={`absolute h-full w-full bg-opacity-20 bg-white ${hover ? 'bg-white' : 'bg-slate-600'}`}></div>
-      <div className="rounded-none w-full flex-row items-center space-x-2 absolute text-white bg-slate-700">
+      <div className={`absolute h-full w-full bg-opacity-40 bg-white ${hover ? 'bg-white' : 'bg-slate-600'}`}></div>
+      <div className="rounded-none w-full flex-row items-center space-x-2 absolute text-white bg-slate-700 bg-opacity-60">
         <h2 className="">Sold for:</h2>
         <h2 className="-mt-2 text-3xl">
           {metadata.transactions.length > 0 ? metadata.transactions[0].price : '-'} ETH

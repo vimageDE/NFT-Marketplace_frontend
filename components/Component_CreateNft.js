@@ -121,7 +121,7 @@ export const CreateNft = () => {
 
         setIsLoadingText('Waiting for Transaction');
 
-        if (!userHasProfile && ownProfile && profileName) {
+        if (!userHasProfile && profileName) {
           setIsLoadingText('Creating Portfolio Transaction');
           await setSeries(profileName);
         }
@@ -196,7 +196,7 @@ export const CreateNft = () => {
                   </label>
 
                   <div>supported files: .png .jpg</div>
-                  {hasProfile && !userHasProfile && ownProfile && profileName ? (
+                  {hasProfile && !userHasProfile && profileName ? (
                     <div>
                       <button className="bg-slate-500 hover:bg-gold text-slate-700 mt-8" onClick={() => skipNft()}>
                         SKIP

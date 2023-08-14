@@ -32,9 +32,7 @@ export default function Create() {
         <div>
           {supportedChains.includes(parseInt(chainId).toString()) ? (
             <>
-              <div className="">
-                {ownProfile && !userHasProfile ? <CreateProfile /> : <div>Profile already created</div>}
-              </div>
+              <div className="">{!userHasProfile ? <CreateProfile /> : <div>Profile already created</div>}</div>
               <CreateNft className="" />
             </>
           ) : (

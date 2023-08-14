@@ -22,6 +22,7 @@ export default function Browse() {
       return;
     }
     const b = await getBrowseData();
+    if (b.all.length == 0) return;
     const allMetadata = await getNftMetadataGroup(b.all);
     const lastSaleMetadata = await getNftMetadataGroup(b.lastSales);
     const highestSaleMetadata = await getNftMetadataGroup(b.highestSales);
@@ -56,10 +57,10 @@ export default function Browse() {
       >
         <h2 className="font-blog text-9xl font-black text-center">Browse</h2>
       </div>
-      {browse ? (
+      {browse && browse.all.length > 0 ? (
         <div className="">
           <div>
-            <div className="bg-slate-600 w-full text-center overflow-hidden py-4">
+            <div className=" w-full text-center overflow-hidden py-4">
               <div
                 className="flex flex-wrap items-center justify-center space-x-8 "
                 style={{
@@ -68,7 +69,7 @@ export default function Browse() {
                 }}
                 ref={containerRef}
               >
-                <div className="flex flex-nowrap space-x-8">
+                <div className="flex flex-nowrap space-x-12">
                   {recentTransactions.map((data, index) => (
                     <NftBrowse key={`${data.id}-${index}`} index={index} metadata={data} type={'l'} />
                   ))}
@@ -84,7 +85,7 @@ export default function Browse() {
       ) : (
         <div>Loading Data</div>
       )}
-      {browse ? (
+      {browse && browse.all.length > 0 ? (
         <div className="">
           <div>
             <div>
